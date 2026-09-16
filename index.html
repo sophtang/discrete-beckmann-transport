@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<!-- Primary Meta Tags -->
+<meta content="Discrete Beckmann Transport Models - Tang, Wang" name="title"/>
+<meta content="Discrete Beckmann Transport Models (DBTM) learn a time-independent autonomous transport map that carries any ambient point to a fixed point on the discrete data manifold in one step. Trained end-to-end from data without a pretrained teacher flow, and extended with a partial-context interpolant for quality-based iterative refinement on language modeling and reasoning." name="description"/>
+<meta content="Beckmann transport, autonomous flow, transport map, one-step generation, flow maps, discrete diffusion, simplex, stochastic interpolants, distillation-free, language modeling, reasoning, Sudoku, GSM8K, machine learning" name="keywords"/>
+<meta content="Sophia Tang, Shiyi Wang" name="author"/>
+<meta content="index, follow" name="robots"/>
+<meta content="English" name="language"/>
+<!-- Open Graph / Facebook -->
+<meta content="article" property="og:type"/>
+<meta content="Discrete Beckmann Transport Models" property="og:title"/>
+<meta content="Discrete Beckmann Transport Models (DBTM) learn an autonomous, time-independent transport map for one-step language modeling and reasoning, replacing distillation with end-to-end self-regression on the conservation equation." property="og:description"/>
+<!-- PLACEHOLDER: project page URL -->
+<meta content="#" property="og:url"/>
+<meta content="1200" property="og:image:width"/>
+<meta content="630" property="og:image:height"/>
+<meta content="Discrete Beckmann Transport Models" property="og:image:alt"/>
+<meta content="Sophia Tang" property="article:author"/>
+<meta content="autonomous flows" property="article:tag"/>
+<meta content="one-step generation" property="article:tag"/>
+<!-- Academic/Research Specific -->
+<meta content="Discrete Beckmann Transport Models for One-Step Language Modeling and Reasoning" name="citation_title"/>
+<meta content="Tang, Sophia" name="citation_author"/>
+<meta content="Wang, Shiyi" name="citation_author"/>
+<meta content="2026" name="citation_publication_date"/>
+<!-- Additional SEO -->
+<meta content="#6B67EE" name="theme-color"/>
+<meta content="#6B67EE" name="msapplication-TileColor"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="default" name="apple-mobile-web-app-status-bar-style"/>
+<!-- Preconnect for performance -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://ajax.googleapis.com" rel="preconnect"/>
+<link href="https://cdn.jsdelivr.net" rel="preconnect"/>
+<title>Discrete Beckmann Transport Models</title>
+<!-- Favicon and App Icons -->
+<link href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='.9em' font-size='90'&gt;🛸&lt;/text&gt;&lt;/svg&gt;" rel="icon"/>
+<link href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='.9em' font-size='90'&gt;🛸&lt;/text&gt;&lt;/svg&gt;" rel="apple-touch-icon"/>
+<!-- Critical CSS - Load synchronously -->
+<link href="static/css/bulma.min.css" rel="stylesheet"/>
+<link href="static/css/index.css" rel="stylesheet"/>
+<!-- Non-critical CSS - Load asynchronously -->
+<link as="style" href="static/css/bulma-carousel.min.css" onload="this.onload=null;this.rel='stylesheet'" rel="preload"/>
+<link as="style" href="static/css/bulma-slider.min.css" onload="this.onload=null;this.rel='stylesheet'" rel="preload"/>
+<link as="style" href="static/css/fontawesome.all.min.css" onload="this.onload=null;this.rel='stylesheet'" rel="preload"/>
+<link as="style" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css" onload="this.onload=null;this.rel='stylesheet'" rel="preload"/>
+<!-- Fallback for browsers that don't support preload -->
+<noscript>
+<link href="static/css/bulma-carousel.min.css" rel="stylesheet"/>
+<link href="static/css/bulma-slider.min.css" rel="stylesheet"/>
+<link href="static/css/fontawesome.all.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css" rel="stylesheet"/>
+</noscript>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- KaTeX for math equations -->
+<link href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" rel="stylesheet"/>
+<script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer="" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], ignoredClasses: ['sample-card__text', 'sample-code']});" src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<!-- Defer non-critical JavaScript -->
+<script defer="" src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script defer="" src="static/js/fontawesome.all.min.js"></script>
+<script defer="" src="static/js/bulma-carousel.min.js"></script>
+<script defer="" src="static/js/bulma-slider.min.js"></script>
+<script defer="" src="static/js/index.js"></script>
+<!-- Structured Data for Academic Papers -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ScholarlyArticle",
+  "headline": "Discrete Beckmann Transport Models for One-Step Language Modeling and Reasoning",
+  "description": "Discrete Beckmann Transport Models (DBTM) learn the autonomous transport map associated with a time-independent flow on the simplex, which provably carries any ambient point to a fixed point on the discrete data manifold in a single step, and can be trained directly from data without a teacher or a distillation stage.",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Sophia Tang",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "University of Pennsylvania"
+      }
+    },
+    {
+      "@type": "Person",
+      "name": "Shiyi Wang",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "Harvard University"
+      }
+    }
+  ],
+  "url": "https://arxiv.org/abs/2609.15903",
+  "image": "static/images/discrete-btm.png",
+  "keywords": [
+    "Beckmann transport",
+    "autonomous flow",
+    "transport map",
+    "one-step generation",
+    "flow maps",
+    "discrete diffusion",
+    "simplex",
+    "distillation-free",
+    "language modeling",
+    "reasoning"
+  ],
+  "isAccessibleForFree": true,
+  "license": "https://opensource.org/licenses/MIT",
+  "sameAs": "https://www.alphaxiv.org/abs/2609.15903"
+}
+</script>
+<meta content="2609.15903" name="citation_arxiv_id"/><meta content="https://arxiv.org/pdf/2609.15903" name="citation_pdf_url"/></head>
+<body>
+<!-- Scroll Progress Bar -->
+<div class="scroll-progress" id="scrollProg"></div>
+<!-- Scroll to Top Button -->
+<button aria-label="Scroll to top" class="scroll-to-top" onclick="scrollToTop()" title="Scroll to top">
+<i class="fas fa-chevron-up"></i>
+</button>
+<main id="main-content">
+<!-- Hero / Title -->
+<section class="hero">
+<div class="hero-body">
+<div class="container is-max-desktop">
+<div class="columns is-centered">
+<div class="column has-text-centered">
+<h1 class="title is-1 publication-title hero-fade hero-fade-1">Discrete Beckmann Transport
+                                Models</h1>
+<h2 class="subtitle is-4 publication-subtitle hero-fade hero-fade-1">for One-Step Language Modeling and Reasoning</h2>
+<div class="is-size-5 publication-authors hero-fade hero-fade-2">
+<span class="author-block">
+<a href="http://sophtang.github.io/" title="Sophia Tang’s personal website">Sophia Tang</a><sup>1,†</sup>,</span>
+<span class="author-block">
+<!-- PLACEHOLDER: author homepage -->
+<a href="#" title="Link coming soon">Shiyi Wang</a><sup>2,3,4</sup>
+</span>
+</div>
+<div class="is-size-5 publication-authors hero-fade hero-fade-3">
+<span class="author-block"><sup>1</sup>University of Pennsylvania   </span>
+<br/>
+<span class="author-block"><sup>2</sup>Harvard University   <sup>3</sup>Kempner Institute   <sup>4</sup>IAIFI</span>
+</div>
+<p class="author-note">† Work done while a visiting researcher at Harvard University.</p>
+<div class="column has-text-centered hero-fade hero-fade-4">
+<div class="publication-links">
+<span class="link-block">
+<a class="external-link button is-normal is-rounded is-dark" href="https://arxiv.org/pdf/2609.15903" rel="noopener noreferrer" target="_blank" title="Read the paper PDF on arXiv">
+<span class="icon"><i class="fas fa-file-pdf"></i></span>
+<span>Paper</span>
+</a>
+</span>
+<span class="link-block">
+<a class="external-link button is-normal is-rounded is-dark" href="https://github.com/sophtang/DBTM" rel="noopener noreferrer" target="_blank" title="View the DBTM code on GitHub">
+<span class="icon"><i class="fab fa-github"></i></span>
+<span>Code</span>
+</a>
+</span>
+<span class="link-block">
+<a class="external-link button is-normal is-rounded is-dark" href="https://www.alphaxiv.org/abs/2609.15903" rel="noopener noreferrer" target="_blank" title="Read the abstract on alphaXiv">
+<span class="icon"><i class="fas fa-file-alt"></i></span>
+<span>alphaXiv</span>
+</a>
+</span>
+<!-- BibTeX: jumps to the citation block at the bottom of the page -->
+<span class="link-block">
+<a class="external-link button is-normal is-rounded is-dark" href="#BibTeX" title="Jump to the BibTeX citation">
+<span class="icon"><i class="fas fa-quote-left"></i></span>
+<span>BibTeX</span>
+</a>
+</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="hero teaser">
+<div class="container is-max-desktop">
+<div class="hero-body has-text-centered hero-fade hero-fade-5">
+<video aria-label="Discrete Beckmann Transport Models overview animation" autoplay="" class="cover-video" controls="" loop="" muted="" playsinline="" poster="static/images/discrete-btm.png" preload="metadata">
+<source src="static/images/dbtm-vid-final.mp4" type="video/mp4"/>
+    Your browser does not support embedded video.
+    <a href="static/images/dbtm-vid-final.mp4">
+     Download the overview video
+    </a>
+    .
+   </video>
+
+</div>
+</div>
+</section>
+<nav aria-label="Page sections" class="section-nav">
+<a href="#flow">
+  Autonomous flow
+ </a>
+<a href="#transport-map">
+  Transport map
+ </a>
+<a href="#language">
+  Language
+ </a>
+<a href="#reasoning">
+  Reasoning
+ </a>
+<a href="#comparison">
+  Comparison
+ </a>
+</nav>
+<div class="container is-max-desktop abstract-details">
+<details class="paper-details">
+<summary>
+   Read the abstract
+  </summary>
+<div class="details-body">
+<p>
+    Discrete diffusion and flow models are a promising alternative to autoregressive language models, but compressing many-step sampling into fewer steps typically requires distilling a pretrained teacher model. This caps the student at the teacher's quality and requires a costly two-stage training pipeline. We introduce Discrete Beckmann Transport Models (DBTM), built on a time-independent flow whose autonomous transport map provably carries any point in the ambient space to a fixed point on the vertices of the simplex in a single step. We show that this fixed-point property is characterized by a conservation equation whose residual can be minimized directly from data, removing the requirement for a teacher flow and time conditioning. Under this construction, a partially trained map corresponds to the flow truncated at finite time, so generation reduces to iterating one map until it reaches a fixed point. We further extend the map to a partial-context interpolant where additional function evaluations act as refinement steps rather than ODE integration steps. On language modeling and reasoning tasks, DBTM enables one- and few-step generation that improves quality and accuracy over discrete diffusion and continuous flow baselines.
+   </p>
+</div>
+</details>
+</div>
+<section class="section hero is-light" id="flow">
+<div class="container is-max-desktop content">
+<h2 class="title is-3 has-text-centered">
+   Autonomous flow on the simplex
+  </h2>
+<p>
+   Represent discrete tokens as the vertices of a simplex. An autonomous flow moves toward these vertices using a velocity field that depends only on the current state—not on time.
+  </p>
+<div class="math-box">
+   $$b(x)=\mathbb E_{t,x_0,x_1}[\dot I_t\mid I_t=x],\qquad \frac{d}{ds}X_s(x)=b(X_s(x)).$$
+  </div>
+<figure class="paper-figure">
+<img alt="Autonomous and time-dependent velocity fields, trajectory straightness, and commitment-time curves" decoding="async" height="1356" loading="lazy" src="static/images/fields_trajectories_tstar.png" width="2400"/>
+<figcaption>
+<strong>
+     Stable attractors, straighter paths.
+    </strong>
+    The autonomous field has stationary basins at the vertices. The time-dependent field’s attractors change during interpolation, bending its trajectories. The remaining panels quantify path straightness and commitment time.
+   </figcaption>
+</figure>
+<div class="story-takeaway">
+   The autonomous flow has stable equilibria at the data vertices and straighter trajectories than the time-dependent flow.
+  </div>
+</div>
+</section>
+<section class="section" id="transport-map">
+<div class="container is-max-desktop content">
+<h2 class="title is-3 has-text-centered">
+   From autonomous flow to a transport map
+  </h2>
+<p>
+   Following the autonomous flow to its endpoint defines a transport map $T$. Every point along a trajectory shares the same endpoint, so the map can take a noisy state directly to a data vertex in one step.
+  </p>
+<div class="flow-to-map">
+<span>
+    Autonomous flow $X_s$
+   </span>
+<span class="flow-arrow">
+    $s\to\tau(x)$   →
+   </span>
+<span>
+    Transport map $T$
+   </span>
+</div>
+<figure class="paper-figure">
+<div class="figure-panel figure-panel--map">
+<img alt="Autonomous flow and its endpoint transport map, with the conservation equation and direct training objective" decoding="async" height="2747" loading="lazy" src="static/images/discrete-btm.png" width="4383"/>
+</div>
+<figcaption>
+<strong>
+     The endpoint map.
+    </strong>
+    The autonomous flow (left) and the map that sends points along a trajectory to the same data vertex (right).
+   </figcaption>
+</figure>
+<p>
+   The endpoint map solves a conservation equation, with the clean vertices fixed:
+  </p>
+<div class="math-box">
+   $$b(x)\cdot\nabla T(x)=0\quad(x\notin M_1),\qquad T(x)=x\quad(x\in M_1).$$
+  </div>
+<p>
+<strong>
+    This gives a direct training objective.
+   </strong>
+   Regress the map onto a frozen copy of its own prediction plus an Euler correction, and enforce the boundary condition on clean data. No pretrained teacher flow or time conditioning is required.
+  </p>
+<p>
+   A partially trained map approximates a finite-time flow. Reapplying the same map advances the state toward its fixed point, turning a one-step generator into a model that can refine its output.
+  </p>
+<details class="paper-details">
+<summary>
+    Training objective and algorithm
+   </summary>
+<div class="details-body">
+<p>
+     With $T_\theta=\operatorname{softmax}(f_\theta)$, the transport and supporting objectives are
+    </p>
+<div class="math-box objectives-box"><p class="objective-notation">Here $\mathcal{C}$ is the set of committed tokens, $\mathcal{K}$ contains the self-composition depths, and $\text{sg}$ denotes stop-gradient.</p>
+<div class="objective-row"><p class="objective-label">Transport loss</p><div class="objective-equation">$$\mathcal{L}_{\text{transport}}(\theta):=\mathbb{E}_{t,x_0,x_1}\bigg[\sum_{\ell\in [L]\setminus \mathcal{C}}\left\|T_\theta(I_t)_\ell-\text{sg}(T_\theta(I_t)+\dot I_t\cdot \nabla T_\theta(I_t))_\ell \right\|^2\bigg]$$</div></div>
+<div class="objective-row"><p class="objective-label">Semigroup loss</p><div class="objective-equation">$$\mathcal{L}_{\text{semi}}(\theta):=\mathbb{E}_{t,x_0,x_1}\bigg[\sum_{k\in \mathcal{K}}\sum_{\ell\in [L]\setminus \mathcal{C}}\text{CE}\left(T_\theta(I_t)_\ell, \text{sg}(T^{\circ k}_\theta(I_t)_\ell) \right)\bigg]$$</div></div>
+<div class="objective-row"><p class="objective-label">Boundary loss</p><div class="objective-equation">$$\mathcal{L}_{\text{bnd}}(\theta):=\mathbb{E}_{x_1}\bigg[\sum_{\ell\in [L]\setminus \mathcal{C}}\text{CE}\left(T_\theta(x_1)_\ell, x_1^\ell\right)\bigg]$$</div></div>
+<div class="objective-row"><p class="objective-label">Anchor loss</p><div class="objective-equation">$$\mathcal{L}_{\text{anchor}}(\theta):=\mathbb{E}_{t,x_0,x_1}\bigg[\sum_{\ell}\boldsymbol{1}[t&gt;t_{\text{anchor}}]\text{CE}\left(T_\theta(I_t)^\ell, x_1^\ell\right)\bigg]$$</div></div></div>
+<p>
+     Boundary supervision fixes clean data, while anchor supervision is applied after the endpoint becomes identifiable. The phase-transition analysis gives $t^\star=1-(1+\sigma\sqrt{2\log V})^{-1/a}$. A late-training semigroup loss encourages agreement with repeated applications.
+    </p>
+<div class="algorithm">
+<h3 class="algo-title">
+      Algorithm 1 · Train the autonomous transport map
+     </h3>
+<p class="algo-inputs">
+<strong>
+       Input:
+      </strong>
+      noise–data pairs $(x_0,x_1)$, map $T_\theta$, anchor time $t_{\mathrm{anchor}}$, and loss weights.
+     </p>
+<ol>
+<li>
+       Sample a minibatch, interpolation times, and clean context positions $\mathcal C$.
+      </li>
+<li>
+       Build the partial-context interpolant $I_t(\mathcal C)$ and its derivative $\dot I_t$.
+      </li>
+<li class="algo-highlight">
+       Regress $T_\theta(I_t)$ onto $\operatorname{sg}(T_\theta(I_t)+\dot I_t\cdot\nabla T_\theta(I_t))$ on uncommitted positions.
+      </li>
+<li>
+       Add boundary cross-entropy on clean data and anchor cross-entropy when $t&gt;t_{\mathrm{anchor}}$.
+      </li>
+<li>
+       When enabled, add late-training semigroup consistency, refinement-in-loop supervision, and the token-quality objective.
+      </li>
+<li>
+       Average the weighted losses over the minibatch, update the parameters, and repeat until convergence.
+      </li>
+</ol>
+</div>
+</div>
+</details>
+</div>
+</section>
+<section class="section hero is-light" id="language">
+<div class="container is-max-desktop content">
+<h2 class="title is-3 has-text-centered">
+   Unconditional language modeling
+  </h2>
+<p>
+   DBTM produces a clean-sequence proposal in one evaluation. Additional evaluations refine the proposal, improving generation quality while retaining diverse text. On OpenWebText,
+   <strong>
+    DBTM reaches 52.2 generative perplexity in four NFEs
+   </strong>
+   , with sample entropy 5.26.
+  </p>
+<figure class="paper-figure">
+<div class="figure-panel figure-panel--frontier">
+<img alt="OpenWebText perplexity–entropy Pareto frontiers for DBTM, DBTM plus refinement-in-loop, FMLM, and FMLM+" decoding="async" height="2747" loading="lazy" src="static/images/discrete-btm.png" width="4383"/>
+</div>
+<figcaption>
+<strong>
+     OpenWebText.
+    </strong>
+    Lower generative perplexity indicates greater coherence; higher sample entropy indicates greater diversity. Sweeping inference settings traces each method’s trade-off across NFE budgets.
+   </figcaption>
+</figure>
+<figure class="paper-figure">
+<img alt="LM1B perplexity–entropy frontiers at one, two, four, eight, and sixteen NFEs" decoding="async" height="568" loading="lazy" src="static/images/frontier_vs_fmlm_lm1b_ril.png" width="2400"/>
+<figcaption>
+<strong>
+     LM1B.
+    </strong>
+    DBTM and refinement-in-loop training extend the quality–diversity frontier. The dotted line marks the real-data entropy of 4.336.
+   </figcaption>
+</figure>
+<h3 class="title is-4">Example generations</h3>
+<p>LM1B samples from the paper at 1, 2, 4, and 8 refinement rounds. Generative perplexity and entropy are measured per sample.</p>
+<div class="samples-block"><h4 class="samples-block__label">LM1B</h4><div class="sample-grid"><article class="sample-card"><div class="sample-card__head"><span class="sample-card__steps">DBTM · 1 NFE</span><span class="sample-card__metrics">Gen. PPL 75.64 · Ent. 4.05</span></div><p class="sample-card__text">[CLS] will take been both by the american who have more than its the decision. [SEP] i had been called on the same called as issue is to go on a last year by the ends for the. [SEP] we will be that way of an were only a new president by the financial committee he said. [SEP] the government's decision to be a key field of his position and with who party. [SEP] " there is a first time and they would continue to be an lead by the american crisis in a day. [SEP] " would may be well to in well - of - day, and she claimed be a long - back to the [SEP]</p></article><article class="sample-card"><div class="sample-card__head"><span class="sample-card__steps">DBTM · 2 NFE</span><span class="sample-card__metrics">Gen. PPL 44.76 · Ent. 4.03</span></div><p class="sample-card__text">[CLS] part. [SEP] the film also will be scheduled in the new time. [SEP] the man is a first day, and if they go's didn't want to have been. [SEP] the better time off with the end of work, the problemss are trying to try for all people to get my results. [SEP] he could not go being held in an first days for the first his long term. [SEP] she and there should have been in his job, because it has going to be the best in the end. [SEP] he said he has also have made in a next year. [SEP] but the new bank will to times with an [SEP]</p></article><article class="sample-card"><div class="sample-card__head"><span class="sample-card__steps">DBTM · 4 NFE</span><span class="sample-card__metrics">Gen. PPL 42.45 · Ent. 4.05</span></div><p class="sample-card__text">[CLS] in london. [SEP] this is a problem for the world, but that we are in the new world when the economy was the way to start the talks. [SEP] but but he could have been left out over the face of the season. [SEP] she has been released from the country and his top to work. [SEP] it would be a right to the public government with the city in india in the uk's country. [SEP] " she has no, there is all going out for her problems, " it was the head of her office that was appointed by a government and the company commander to see a livings - - class time, [SEP]</p></article><article class="sample-card"><div class="sample-card__head"><span class="sample-card__steps">DBTM · 8 NFE</span><span class="sample-card__metrics">Gen. PPL 46.92 · Ent. 4.03</span></div><p class="sample-card__text">[CLS] for his case. [SEP] the president's president, who was a director with the same time, said he will not be a video conference on wednesday. [SEP] the party was just going to be going in a five - year - - after'm in his campaign, the president said. [SEP] he said he has been convinced that it has been a military operation to be made as a new threat from the government of the part of the world's global development of terrorism that was announced on friday. [SEP] it have been an opportunity for the minister, at markets and services, and that is on the first quarter of the day is [SEP]</p></article></div></div>
+<div class="samples-block"><h4 class="samples-block__label">OpenWebText</h4><p>Length-1024 samples from DBTM with linear attention and refinement-in-loop training.</p><div class="sample-grid owt-samples"><article class="sample-card"><div class="sample-card__head"><span class="sample-card__steps">DBTM + ril · 16 NFE</span><span class="sample-card__metrics">Gen. PPL 45.5 · Ent. 5.58</span></div><p class="sample-card__text">[END]...I mean, I think we started at the end of last year to figure out what we're doingre doing right now. And mean… when you look at your [data], you know that about $100,000 per year — That sounds pretty hard; i'm still sure little bit." But I think this is going to increase increased by about $100,000 per year — That's pretty single very important! This is very important and it's 'sthe single most important thing in our history. And so far i've've seen huge number million Americans coming across every day months' past decade...Our population has increased by about $100,000 per year — those people who don't caretakers." This is consistent with the United States — basically what's called “the United Kingdom” which translates into about $100,000 per year — What happens happening right?
+AndIt's called “the United States Of America” which " says "You'll say that this country is worth less than $100,000 annually,000-$100 per year, and then we’ll be able access through some sort of so-called "takers." But at exact same time when we comes places where we’re going to be able to make those kinds, we can make those kinds right now, but I don't becauset really think there is no best way to do something We don't becauset know what it is important for us.
+
+I think it's really very important because I think it's important for us to do something. The interesting thing about'vesurveillance since America is that when living love this country we are going to come up with something like this: What [What_surveillance?" There—A lot those people living love the United States] [that wasnt true]. They thought they were going to do something like — even though they were going would have enough opportunity to do something like this.)
+
+For many countries around the world, the problem is probably maybe two or two years ago when somebody thought they’re going to do something like "surve surveillance." But I think there is going to be a lot amount of work that needs to happen on the other side of things, along with things that needs to be done now So We’re going to put some factors into account exactly where we need irreveillanceillance, so that everybody cansolve themselves around each issues in terms of how much work should spend, obviously, if you look doing something, you need to focus on the other side of things that You need can deal with them! For So, we need to focus on… You’ll need to focus on making decisions while spending whatever whatever needs will happen in the future, so we need focus on making decisions decisions and these kinds of things that we can actually happen in foreseeable future.
+
+The second between here is as well as how much money should actually spend, especially at the rest of our lives. So, because many people on the other side of things are trying to get rid of them without losing their jobs -- especially during periods aren't necessarilyt necessarily interested ones looking climate change, because they're looking forward change in terms future economic growth . That means that we're going to be ableto take away and come deal with them again and try to get rid of them. We’re going to get rid of them — as well as how they’re trying to get rid of them without losing their jobs, so they have to take away from them or lose their jobs — and then everybody has nothing to do something again?
+AndThat's what makes me saying.
+
+The interesting thing about this issue What actually actually happening within the United States today is that the economy itself is not the only thing — because it is not just about getting rid of existing ones, but also creating new ones systems based upon existing ones . These aren require designed based replace existing existing systems. If you do something, if you don'tre doing anything then you will be able to hire all the people who are going to be able to get rid of their jobs. And then'll resellate everything else together until everyone start buying new products, buy lots and sell lots products every stuff. So We’re going to create some kind of global economy where hopefully the United States can create a new economy where we create create new jobs. And so eventually resellate everything else together again until Now…So yeah … Well seemsThere large reason many American companies companies start using modern technology, so it’s really important fully understand why these technologies exist throughout Europe. But when you look at economic data from some of the most important parts of the world — including example, including countries around the world, as well as a whole, there are some kinds of economic data available online today – including Germany Netherlands Germany Netherlands France Netherlands European Union.
+
+And so when human irreveillanceillance comes down again , everyone becomes increasingly difficult finding find[END]</p></article><article class="sample-card"><div class="sample-card__head"><span class="sample-card__steps">DBTM + ril · 32 NFE</span><span class="sample-card__metrics">Gen. PPL 41.7 · Ent. 5.49</span></div><p class="sample-card__text">[END], but the whole sideterm life is still pretty simple, so youre going to be able to do it. You know that youre trying to put your hands, but youll got some sort of piece…that could actually put in place for long rest over the next few years or ” There are a lot of people who are ‘trying their hands hands so theyre going to put the pieces in place. So mean…A lot many people have been able to work with them almost exactly what theyve done in the past few years or so — and theyve done it. Weve working with them over these past five years, so were going to get them into trouble.
+
+So thinkWe need reselling on the other sideterm life hands instead than putting those hands together instead using holding hands. I thinkWere going to move around the corner. The main goal here is to make sure everything goes right. We need resell put those hands into day-to-the/day/ hands. Use it. And as weve talked talking before ,were resell put the hands into place hands. And so ive seen lots more sales coming out today than Some companies expected already hold hands during the mid-to period compared to the mid-to period after its release, which is why we need reseve got some sort of short sideterm hands.
+
+I think its really important me me personally personally about my experience regarding the short sideterm life. But when you look at how i am working on the other side, you know dont know what is going to do anymore! How much development cost and how much money could spent spent building this project? There are all kinds of things that weve done talking before. One of those things weve talked talking before was that we wanted to be able to do everything in terms of a lot of people who worked on this project for a long time. So, its not just trying hard but the best part of what we want from doing. But... in fact, if don´ tryingt come up with something where youre going to start doing now, and if you want doing something at this point, maybe as you know, you can do [toughly] [laughs]. But I think this is going to be the right thing. We` resell [the right thing,the right direction], and then we`ll get back right again until hopefully maybe something could happen as soon as possible.
+
+In the end, if i resell reselling right direction--we'll sell new stuff from time to time until the next few months We`ll rese back over the next couple or year — and then we can resell get another right direction. I think were going to be able to focus some sort upon making sure decision making made — and then making gets made - right?
+AndA lot of course things like making decisions decisions decisions aren often easy by making means necessary creating dealing dealing solve bad problems, but sometimes even better bad ones. So I think every single step we need should focus on a certain role of our lives in terms of technology. We need should focus on using these tools tools simply because we have a certain role in which we tendly choose not to use anything like this.
+
+What makes human beings, non-human, non-human beings, non-nonhumanhuman?
+If someone go through another certain level, I mean another person will be able to spend another level level without their partner—a certain level in the next few years, so they’ll be able only spend half her hour—a certain level, and if you go through certain level, which will be very difficult. If you go to a certain level with your partner, the person will be able spend a certain amount of time with each other.
+
+The problem thing that there will be some relationships between these two groups would say: “This is a very most important part of our life.” The relationship between ourselves and the other will be very difficult without having partner partner. In other words, if we go through certain levels while others might become less likely to become both human and non-human beings — although others may seem less less likely in terms of happiness (and happiness) than others else; That might lead lead far greater happiness in the rest of our life.
+
+And also comes with its relationship between ourselves two types – human beings , as well as the relationship between what we love and what we love -- especially as its result despite having far greater interest in both humans and humans as part of our lives during the last part of our lives.
+
+I think the relationship between ourselves two human groups in terms of how much money love spend each day becomes extremely interesting for me . This such most important part of an individual society[END]</p></article><article class="sample-card"><div class="sample-card__head"><span class="sample-card__steps">DBTM + ril · 256 NFE</span><span class="sample-card__metrics">Gen. PPL 34.4 · Ent. 5.61</span></div><p class="sample-card__text">[END] She thought she'd ask pretty simple question: "You'll find a solution in terms of solutions?" Do You know what we're going to do now?
+
+And I think it's really important for me fully understand why companies need help create relationships across Europe. One of those biggest challenges - whether anything could happen at the end of last year, is at the end level June year - will happen at the end of 2016. And I think that we're going to make it easier To build relationships across an entire United society as a whole — let'll talk about how much money spend versus what we're doing; how much Americans spend and how much money spend, how much money Americans spend!
+
+Who should focus on it, especially during the United term?
+I don't really wait until you know what happens happen. You'll see as soon as possible can happen now But I think it's going to be very difficult now, but if'll come up with something like every new product...
+
+"I mean, we've got a lot more over these last few years, so we have some sort of positive feedback from both sides throughout our long term. We've got some sort of positive feedback from both sides throughout our long termterm relationship ... They might actually behave exactly the same way ours did last year, so I think it's a good opportunity for us to do something.
+
+And so far...we haven´ seen enough progress towards making sure everyone knows exactly what happens next week before they start getting ready …but we're still working hard toward day-to-day/to/day. We have to focus more on making sure everyone knows exactly what happens next week before they start getting ready."
+AndIn his recent interview, he described himself as "great international order nation", being "the best person within an entire United Kingdom. He also called himself "a great international international order nation".
+
+"Wem going to talk ablely with [United Nations in order country] the idea of being “the best person within entire United States today”," he said.
+
+So, I think everybody should get in touch with these United Nations officials: There areA lot of people who are been here in the United States — obviously, theyve been here over 20 years — and they feel, you know, comfortable expressing themselves in terms of their lives, which is really important.
+
+What does your experience actually mean in terms of how technology works, do you have a lot young people who feel like that?
+
+I think this's probably the interesting thing about this day–to-day is that we’ve got lots young folks coming out here. The [Theto-to-day is that we’re being able to get them back into our day-to-day lives. So, it's a process that we can take care for ourselves and improve our environment, which is why technology works differently. And hopefully technology will eventually move away from the United sideto.-world [worldwide]. ButI think there’s going to see some kind of change happening globally in terms thereof — one of the things that we've`ve seen doing since its beginning last year – maybe maybe maybe another year or two years, in one case — You mean, there’ll gonna be a certain kind of spectrum. But if even if you don't`t have a certain-based spectrum, then this's going to be different. This is a very important difference between us today; it doesnt affect each individual on the other side of the spectrum, which is really shortening economic spectrum. It’s not just about China, the US side economic spectrum in terms of economic spectrum, and also China on the other side.
+
+So, there are some things that can happenvelling without shortening economic growth — You mean, there's going to be a day-to-day shift here. It’s going to be interesting.
+
+In fact words where everything goes through business in its entirety, you know, everybody should start talking about business. The whole thing about spectrum is not just about jobs, but about economic livelihoods also about so much more (and on its own) than any other company except Apple , Microsoft , Google , Apple \&amp; Apple Inc, as well as other companies such as Google Inc.
+
+There are a lot of differences. There are people in this country. There are happenvelling lots more differences within the United States — For instance…there arent many big differences — For mean, the only people in this country are those only ones — for example, and the only ones who don’re trying to live their lives. And while you know, they’re trying to live their lives without having access resources [for example],they arent having access resources [for example]. But when you look at the end of the spectrum when you look at either end of the spectrum where you might[END]</p></article></div></div>
+<p class="paper-note">Samples are reproduced as generated, including repetitions and imperfect wording. Metrics displayed are for individual samples, not benchmark averages.</p>
+<details class="paper-details">
+<summary>
+    How refinement-in-loop improves generation
+   </summary>
+<div class="details-body">
+<p>
+     Random clean contexts differ from the structured contexts visited by the sampler. Refinement-in-loop (ril) trains on the model’s own rollout states to reduce this mismatch. It lowers one-step perplexity from 201.20 to 85.50 on LM1B and from 188.2 to 65.2 on OpenWebText.
+    </p>
+<p>
+     LM1B adds soft self-distillation targets from later rollout predictions after a 100K-step warmup. This uses the model’s own refinement trajectory, without a separately pretrained teacher flow.
+    </p>
+<figure class="paper-figure">
+<img alt="Validation perplexity and entropy during committed and non-committed refinement training on LM1B" decoding="async" height="1197" loading="lazy" src="static/images/onpolicy_gate_lm1b.png" width="2400"/>
+<figcaption>
+<strong>
+       Training on refinement states.
+      </strong>
+      After the warmup, perplexity drops while entropy remains stable. These small-batch diagnostics use GPT-2-small and are not directly comparable to the main results.
+     </figcaption>
+</figure>
+</div>
+</details>
+</div>
+</section>
+<section class="section" id="reasoning">
+<div class="container is-max-desktop content">
+<h2 class="title is-3 has-text-centered">
+   Conditional reasoning through refinement
+  </h2>
+<p>
+   A one-shot decode can contain locally plausible but globally inconsistent tokens. DBTM holds confident predictions as clean context, resets uncertain positions to noise, and applies the same transport map again.
+  </p>
+<ol class="refinement-steps">
+<li>
+<strong>
+     Propose
+    </strong>
+<span>
+     Apply the transport map.
+    </span>
+</li>
+<li>
+<strong>
+     Score
+    </strong>
+<span>
+     Estimate confidence or learned token quality.
+    </span>
+</li>
+<li>
+<strong>
+     Commit
+    </strong>
+<span>
+     Keep high-scoring tokens and renoise the rest.
+    </span>
+</li>
+<li>
+<strong>
+     Refine
+    </strong>
+<span>
+     Repeat with the new clean context.
+    </span>
+</li>
+</ol>
+<div class="headline-results">
+<div class="headline-result">
+<span class="result-value">
+     84.6
+     <span>
+      %
+     </span>
+</span>
+<span>
+     Hard Sudoku · 4 NFEs
+    </span>
+</div>
+<div class="headline-result">
+<span class="result-value">
+     16.8
+     <span>
+      %
+     </span>
+</span>
+<span>
+     GSM8K · 32 NFEs
+    </span>
+</div>
+</div>
+<figure class="paper-figure">
+<img alt="A Sudoku puzzle before and after four refinement rounds, with tokens colored by correctness and confidence" decoding="async" height="1304" loading="lazy" src="static/images/refinement_rounds_sudoku.png" width="2400"/>
+<figcaption>
+<strong>
+     Reasoning as iterative refinement.
+    </strong>
+    Each round builds on committed positions to resolve the remaining Sudoku cells.
+   </figcaption>
+</figure>
+<h3 class="title is-4">
+   Sudoku
+  </h3>
+<p>
+   At four NFEs, DBTM + ril solves 84.6% of hard puzzles, compared with 71.2% for FMLM+. At 16 NFEs, the accuracies rise to
+   <strong>
+    97.5% and 81.4%
+   </strong>
+   , respectively.
+  </p>
+<div aria-label="Sudoku · exact-solve accuracy (%) results" class="results-table-wrap" role="region" tabindex="0">
+<table class="results-table">
+<caption>
+     Sudoku · exact-solve accuracy (%)
+    </caption>
+<thead>
+<tr>
+<th scope="col">
+       Method
+      </th>
+<th scope="col">
+       NFE
+      </th>
+<th scope="col">
+       Easy ↑
+      </th>
+<th scope="col">
+       Medium ↑
+      </th>
+<th scope="col">
+       Hard ↑
+      </th>
+</tr>
+</thead>
+<tbody>
+<tr class="group-start">
+<th scope="row">AR · Sample</th>
+<td>
+       128
+      </td>
+<td>
+       13.9
+      </td>
+<td>
+       5.1
+      </td>
+<td>
+       0.6
+      </td>
+</tr>
+<tr class="">
+<th scope="row">AR · Greedy</th>
+<td>
+       128
+      </td>
+<td>
+       14.6
+      </td>
+<td>
+       5.1
+      </td>
+<td>
+       1.0
+      </td>
+</tr>
+<tr class="group-start">
+<th scope="row">
+       MDLM
+      </th>
+<td>
+       128
+      </td>
+<td>
+       92.0
+      </td>
+<td>
+       77.1
+      </td>
+<td>
+       30.2
+      </td>
+</tr>
+<tr class="">
+<th scope="row">
+       Duo
+      </th>
+<td>
+       128
+      </td>
+<td>
+       96.3
+      </td>
+<td>
+       84.7
+      </td>
+<td>
+       58.4
+      </td>
+</tr>
+<tr class="group-start">
+<th scope="row">
+       CANDI
+      </th>
+<td>
+       128
+      </td>
+<td>
+       79.3
+      </td>
+<td>
+       45.9
+      </td>
+<td>
+       16.7
+      </td>
+</tr>
+<tr class="">
+<th scope="row">
+       FLM
+      </th>
+<td>
+       128
+      </td>
+<td>
+       94.2
+      </td>
+<td>
+       82.7
+      </td>
+<td>
+       44.5
+      </td>
+</tr>
+<tr class="">
+<th scope="row">
+       S-FLM
+      </th>
+<td>
+       128
+      </td>
+<td>
+       94.8
+      </td>
+<td>
+       85.2
+      </td>
+<td>
+       45.0
+      </td>
+</tr>
+<tr class="group-start">
+<th scope="row">
+       FMLM+
+      </th>
+<td>
+       4
+      </td>
+<td>
+       97.9
+      </td>
+<td>
+       92.0
+      </td>
+<td>
+       71.2
+      </td>
+</tr>
+<tr class="">
+<th scope="row">
+       FMLM+
+      </th>
+<td>
+       16
+      </td>
+<td>
+       97.8
+      </td>
+<td>
+       92.6
+      </td>
+<td>
+       81.4
+      </td>
+</tr>
+<tr class="dbtm-row">
+<th scope="row">
+       DBTM + ril
+      </th>
+<td>
+       4
+      </td>
+<td>
+       99.5
+      </td>
+<td>
+       97.3
+      </td>
+<td>
+       84.6
+      </td>
+</tr>
+<tr class="dbtm-row">
+<th scope="row">
+       DBTM + ril
+      </th>
+<td>
+       16
+      </td>
+<td>
+       99.9
+      </td>
+<td>
+       99.4
+      </td>
+<td>
+       97.5
+      </td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="paper-note">
+   Evaluated on 2,000 held-out puzzles. FMLM+ at 16 NFEs uses released-checkpoint evaluations for easy and medium Sudoku and the baseline paper’s hard-Sudoku result.
+  </p>
+<h3 class="title is-4">
+   GSM8K
+  </h3>
+<p>
+   After training on TinyGSM code, DBTM achieves
+   <strong>
+    16.8% accuracy at 32 NFEs
+   </strong>
+   , slightly above FMLM+ at the same budget. Autoregressive models remain stronger on this task.
+  </p>
+<div class="samples-block"><h4 class="samples-block__label">TinyGSM refinement traces</h4><p>Two examples from the paper, shown at rounds 1, 10, 20, and 31 of a 32-round budget. The question stays fixed; generated tokens become committed as refinement progresses.</p><p class="sample-legend"><span class="token-committed">Committed token</span> <span class="token-refining">Token being refined</span></p><h5 class="samples-block__label">Example 1</h5><div class="sample-grid trace-samples"><article class="sample-card"><div class="sample-card__head"><span class="sample-card__steps">DBTM · Round 1</span><span class="sample-card__metrics">Committed 423/482</span></div><pre class="sample-code"><span class="token-muted">Ch</span><span class="token-muted">arm</span><span class="token-muted">aine</span> <span class="token-muted">will</span> <span class="token-muted">be</span> <span class="token-muted">1</span><span class="token-muted">6</span> <span class="token-muted">years</span> <span class="token-muted">old</span> <span class="token-muted">in</span> <span class="token-muted">1</span><span class="token-muted">2</span> <span class="token-muted">years</span><span class="token-muted">.</span> <span class="token-muted">How</span> <span class="token-muted">old</span> <span class="token-muted">will</span> <span class="token-muted">she</span> <span class="token-muted">be</span> <span class="token-muted">4</span> <span class="token-muted">years</span> <span class="token-muted">from</span> <span class="token-muted">now</span><span class="token-muted">?</span>
+<span class="token-committed">def</span> <span class="token-committed">simple</span><span class="token-committed">_</span><span class="token-committed">math</span><span class="token-committed">_</span><span class="token-committed">problem</span><span class="token-committed">()</span> <span class="token-committed">-&gt;</span> <span class="token-committed">int</span><span class="token-committed">:</span>
+    <span class="token-committed">"""</span>
+    <span class="token-committed">Ch</span><span class="token-committed">arm</span><span class="token-committed">aine</span> <span class="token-committed">will</span> <span class="token-committed">be</span> <span class="token-committed">1</span><span class="token-committed">6</span> <span class="token-committed">years</span> <span class="token-committed">old</span> <span class="token-committed">in</span> <span class="token-committed">1</span><span class="token-committed">2</span> <span class="token-committed">years</span><span class="token-committed">.</span>
+    <span class="token-committed">How</span> <span class="token-committed">old</span> <span class="token-committed">will</span> <span class="token-committed">she</span> <span class="token-committed">be</span> <span class="token-committed">4</span> <span class="token-committed">years</span> <span class="token-committed">from</span> <span class="token-committed">now</span><span class="token-committed">?</span>
+    <span class="token-committed">"""</span>
+    <span class="token-refining">age</span><span class="token-refining">_</span><span class="token-refining">age</span> <span class="token-refining">=</span> <span class="token-refining">1</span><span class="token-refining">6</span>
+    <span class="token-refining">_</span>  <span class="token-refining">=</span> <span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">[PAD]</span><span class="token-refining">_</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span></pre></article><article class="sample-card"><div class="sample-card__head"><span class="sample-card__steps">DBTM · Round 10</span><span class="sample-card__metrics">Committed 452/482</span></div><pre class="sample-code"><span class="token-muted">Ch</span><span class="token-muted">arm</span><span class="token-muted">aine</span> <span class="token-muted">will</span> <span class="token-muted">be</span> <span class="token-muted">1</span><span class="token-muted">6</span> <span class="token-muted">years</span> <span class="token-muted">old</span> <span class="token-muted">in</span> <span class="token-muted">1</span><span class="token-muted">2</span> <span class="token-muted">years</span><span class="token-muted">.</span> <span class="token-muted">How</span> <span class="token-muted">old</span> <span class="token-muted">will</span> <span class="token-muted">she</span> <span class="token-muted">be</span> <span class="token-muted">4</span> <span class="token-muted">years</span> <span class="token-muted">from</span> <span class="token-muted">now</span><span class="token-muted">?</span>
+<span class="token-committed">def</span> <span class="token-committed">simple</span><span class="token-committed">_</span><span class="token-committed">math</span><span class="token-committed">_</span><span class="token-committed">problem</span><span class="token-committed">()</span> <span class="token-committed">-&gt;</span> <span class="token-committed">int</span><span class="token-committed">:</span>
+    <span class="token-committed">"""</span>
+    <span class="token-committed">Ch</span><span class="token-committed">arm</span><span class="token-committed">aine</span> <span class="token-committed">will</span> <span class="token-committed">be</span> <span class="token-committed">1</span><span class="token-committed">6</span> <span class="token-committed">years</span> <span class="token-committed">old</span> <span class="token-committed">in</span> <span class="token-committed">1</span><span class="token-committed">2</span> <span class="token-committed">years</span><span class="token-committed">.</span>
+    <span class="token-committed">How</span> <span class="token-committed">old</span> <span class="token-committed">will</span> <span class="token-committed">she</span> <span class="token-committed">be</span> <span class="token-committed">4</span> <span class="token-committed">years</span> <span class="token-committed">from</span> <span class="token-committed">now</span><span class="token-committed">?</span>
+    <span class="token-committed">"""</span>
+    <span class="token-refining">age</span> <span class="token-refining">=</span> <span class="token-refining">1</span><span class="token-refining">6</span><span class="token-refining">1</span><span class="token-refining">6</span><span class="token-refining">1</span> <span class="token-refining">1</span> <span class="token-refining">1</span>  <span class="token-refining">=</span> <span class="token-refining">=</span> <span class="token-refining">=</span>  <span class="token-refining">result</span> <span class="token-refining">=</span> <span class="token-refining">result</span> <span class="token-refining">result</span> <span class="token-refining">result</span> <span class="token-refining">result</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span></pre></article><article class="sample-card"><div class="sample-card__head"><span class="sample-card__steps">DBTM · Round 20</span><span class="sample-card__metrics">Committed 471/482</span></div><pre class="sample-code"><span class="token-muted">Ch</span><span class="token-muted">arm</span><span class="token-muted">aine</span> <span class="token-muted">will</span> <span class="token-muted">be</span> <span class="token-muted">1</span><span class="token-muted">6</span> <span class="token-muted">years</span> <span class="token-muted">old</span> <span class="token-muted">in</span> <span class="token-muted">1</span><span class="token-muted">2</span> <span class="token-muted">years</span><span class="token-muted">.</span> <span class="token-muted">How</span> <span class="token-muted">old</span> <span class="token-muted">will</span> <span class="token-muted">she</span> <span class="token-muted">be</span> <span class="token-muted">4</span> <span class="token-muted">years</span> <span class="token-muted">from</span> <span class="token-muted">now</span><span class="token-muted">?</span>
+<span class="token-committed">def</span> <span class="token-committed">simple</span><span class="token-committed">_</span><span class="token-committed">math</span><span class="token-committed">_</span><span class="token-committed">problem</span><span class="token-committed">()</span> <span class="token-committed">-&gt;</span> <span class="token-committed">int</span><span class="token-committed">:</span>
+    <span class="token-committed">"""</span>
+    <span class="token-committed">Ch</span><span class="token-committed">arm</span><span class="token-committed">aine</span> <span class="token-committed">will</span> <span class="token-committed">be</span> <span class="token-committed">1</span><span class="token-committed">6</span> <span class="token-committed">years</span> <span class="token-committed">old</span> <span class="token-committed">in</span> <span class="token-committed">1</span><span class="token-committed">2</span> <span class="token-committed">years</span><span class="token-committed">.</span>
+    <span class="token-committed">How</span> <span class="token-committed">old</span> <span class="token-committed">will</span> <span class="token-committed">she</span> <span class="token-committed">be</span> <span class="token-committed">4</span> <span class="token-committed">years</span> <span class="token-committed">from</span> <span class="token-committed">now</span><span class="token-committed">?</span>
+    <span class="token-committed">"""</span>
+    <span class="token-refining">x</span> <span class="token-committed">=</span> <span class="token-committed">1</span><span class="token-committed">6</span> <span class="token-refining">-</span>  <span class="token-refining">=</span><span class="token-refining">2</span><span class="token-refining">4</span>
+    <span class="token-refining">y</span> <span class="token-committed">=</span> <span class="token-refining">x</span> <span class="token-committed">+</span> <span class="token-committed">4</span>
+
+    <span class="token-committed">result</span> <span class="token-committed">=</span> <span class="token-refining">y</span>
+
+    <span class="token-committed">return</span> <span class="token-committed">result</span><span class="token-committed">&lt;|endoftext|&gt;</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span></pre></article><article class="sample-card"><div class="sample-card__head"><span class="sample-card__steps">DBTM · Round 31</span><span class="sample-card__metrics">Committed 482/482</span></div><pre class="sample-code"><span class="token-muted">Ch</span><span class="token-muted">arm</span><span class="token-muted">aine</span> <span class="token-muted">will</span> <span class="token-muted">be</span> <span class="token-muted">1</span><span class="token-muted">6</span> <span class="token-muted">years</span> <span class="token-muted">old</span> <span class="token-muted">in</span> <span class="token-muted">1</span><span class="token-muted">2</span> <span class="token-muted">years</span><span class="token-muted">.</span> <span class="token-muted">How</span> <span class="token-muted">old</span> <span class="token-muted">will</span> <span class="token-muted">she</span> <span class="token-muted">be</span> <span class="token-muted">4</span> <span class="token-muted">years</span> <span class="token-muted">from</span> <span class="token-muted">now</span><span class="token-muted">?</span>
+<span class="token-committed">def</span> <span class="token-committed">simple</span><span class="token-committed">_</span><span class="token-committed">math</span><span class="token-committed">_</span><span class="token-committed">problem</span><span class="token-committed">()</span> <span class="token-committed">-&gt;</span> <span class="token-committed">int</span><span class="token-committed">:</span>
+    <span class="token-committed">"""</span>
+    <span class="token-committed">Ch</span><span class="token-committed">arm</span><span class="token-committed">aine</span> <span class="token-committed">will</span> <span class="token-committed">be</span> <span class="token-committed">1</span><span class="token-committed">6</span> <span class="token-committed">years</span> <span class="token-committed">old</span> <span class="token-committed">in</span> <span class="token-committed">1</span><span class="token-committed">2</span> <span class="token-committed">years</span><span class="token-committed">.</span>
+    <span class="token-committed">How</span> <span class="token-committed">old</span> <span class="token-committed">will</span> <span class="token-committed">she</span> <span class="token-committed">be</span> <span class="token-committed">4</span> <span class="token-committed">years</span> <span class="token-committed">from</span> <span class="token-committed">now</span><span class="token-committed">?</span>
+    <span class="token-committed">"""</span>
+    <span class="token-committed">x</span> <span class="token-committed">=</span> <span class="token-committed">1</span><span class="token-committed">6</span> <span class="token-committed">-</span> <span class="token-committed">1</span><span class="token-committed">2</span>
+
+    <span class="token-committed">y</span> <span class="token-committed">=</span> <span class="token-committed">x</span> <span class="token-committed">+</span> <span class="token-committed">4</span>
+
+    <span class="token-committed">result</span> <span class="token-committed">=</span> <span class="token-committed">y</span>
+
+    <span class="token-committed">return</span> <span class="token-committed">result</span><span class="token-committed">&lt;|endoftext|&gt;</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span></pre></article></div><h5 class="samples-block__label">Example 2</h5><div class="sample-grid trace-samples"><article class="sample-card"><div class="sample-card__head"><span class="sample-card__steps">DBTM · Round 1</span><span class="sample-card__metrics">Committed 402/483</span></div><pre class="sample-code"><span class="token-muted">An</span> <span class="token-muted">er</span><span class="token-muted">aser</span> <span class="token-muted">costs</span> <span class="token-muted">$</span><span class="token-muted">2</span> <span class="token-muted">and</span> <span class="token-muted">a</span> <span class="token-muted">pencil</span> <span class="token-muted">costs</span> <span class="token-muted">$</span><span class="token-muted">3</span><span class="token-muted">.</span> <span class="token-muted">How</span> <span class="token-muted">much</span> <span class="token-muted">do</span> <span class="token-muted">6</span> <span class="token-muted">er</span><span class="token-muted">asers</span> <span class="token-muted">and</span> <span class="token-muted">8</span> <span class="token-muted">pencils</span> <span class="token-muted">cost</span><span class="token-muted">?</span>
+<span class="token-committed">def</span> <span class="token-committed">simple</span><span class="token-committed">_</span><span class="token-committed">math</span><span class="token-committed">_</span><span class="token-committed">problem</span><span class="token-committed">()</span> <span class="token-committed">-&gt;</span> <span class="token-committed">int</span><span class="token-committed">:</span>
+    <span class="token-refining">"""</span>
+    <span class="token-committed">An</span> <span class="token-committed">er</span><span class="token-committed">aser</span> <span class="token-committed">costs</span> <span class="token-committed">$</span><span class="token-committed">2</span> <span class="token-committed">and</span> <span class="token-committed">a</span> <span class="token-committed">pencil</span> <span class="token-committed">costs</span> <span class="token-committed">$</span><span class="token-committed">3</span><span class="token-committed">.</span>
+    <span class="token-committed">How</span> <span class="token-committed">much</span> <span class="token-committed">do</span> <span class="token-committed">6</span> <span class="token-committed">er</span><span class="token-committed">asers</span> <span class="token-committed">and</span> <span class="token-committed">8</span> <span class="token-committed">pencils</span> <span class="token-committed">cost</span><span class="token-committed">?</span>
+    <span class="token-refining">"""</span>
+    <span class="token-refining">er</span><span class="token-refining">aser</span><span class="token-refining">_</span><span class="token-refining">cost</span> <span class="token-refining">=</span> <span class="token-refining">2</span>
+    <span class="token-refining">pencil</span><span class="token-refining">_</span><span class="token-refining">cost</span> <span class="token-refining">=</span> <span class="token-refining">3</span>
+
+   <span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">ers</span> <span class="token-refining">=</span> <span class="token-refining">6</span>
+   <span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span> <span class="token-refining">=</span><span class="token-refining">ils</span> <span class="token-refining">=</span> <span class="token-refining">8</span><span class="token-refining">_</span> <span class="token-refining">total</span><span class="token-refining">_</span><span class="token-refining">cost</span> <span class="token-refining">=</span> <span class="token-refining">=</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span> <span class="token-refining">*</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span></pre></article><article class="sample-card"><div class="sample-card__head"><span class="sample-card__steps">DBTM · Round 10</span><span class="sample-card__metrics">Committed 434/483</span></div><pre class="sample-code"><span class="token-muted">An</span> <span class="token-muted">er</span><span class="token-muted">aser</span> <span class="token-muted">costs</span> <span class="token-muted">$</span><span class="token-muted">2</span> <span class="token-muted">and</span> <span class="token-muted">a</span> <span class="token-muted">pencil</span> <span class="token-muted">costs</span> <span class="token-muted">$</span><span class="token-muted">3</span><span class="token-muted">.</span> <span class="token-muted">How</span> <span class="token-muted">much</span> <span class="token-muted">do</span> <span class="token-muted">6</span> <span class="token-muted">er</span><span class="token-muted">asers</span> <span class="token-muted">and</span> <span class="token-muted">8</span> <span class="token-muted">pencils</span> <span class="token-muted">cost</span><span class="token-muted">?</span>
+<span class="token-committed">def</span> <span class="token-committed">simple</span><span class="token-committed">_</span><span class="token-committed">math</span><span class="token-committed">_</span><span class="token-committed">problem</span><span class="token-committed">()</span> <span class="token-committed">-&gt;</span> <span class="token-committed">int</span><span class="token-committed">:</span>
+    <span class="token-committed">'''</span>
+    <span class="token-committed">An</span> <span class="token-committed">er</span><span class="token-committed">aser</span> <span class="token-committed">costs</span> <span class="token-committed">$</span><span class="token-committed">2</span> <span class="token-committed">and</span> <span class="token-committed">a</span> <span class="token-committed">pencil</span> <span class="token-committed">costs</span> <span class="token-committed">$</span><span class="token-committed">3</span><span class="token-committed">.</span>
+    <span class="token-committed">How</span> <span class="token-committed">much</span> <span class="token-committed">do</span> <span class="token-committed">6</span> <span class="token-committed">er</span><span class="token-committed">asers</span> <span class="token-committed">and</span> <span class="token-committed">8</span> <span class="token-committed">pencils</span> <span class="token-committed">cost</span><span class="token-committed">?</span>
+    <span class="token-committed">'''</span>
+    <span class="token-refining">#</span><span class="token-refining">_</span><span class="token-refining">cost</span> <span class="token-refining">=</span> <span class="token-refining">2</span> <span class="token-refining">=</span>
+
+    <span class="token-refining">=</span>    <span class="token-refining">_</span>  <span class="token-refining">=</span> <span class="token-refining">=</span><span class="token-refining">_</span><span class="token-refining">cost</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">cost</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">_</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span>
+   <span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-refining">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span></pre></article><article class="sample-card"><div class="sample-card__head"><span class="sample-card__steps">DBTM · Round 20</span><span class="sample-card__metrics">Committed 483/483</span></div><pre class="sample-code"><span class="token-muted">An</span> <span class="token-muted">er</span><span class="token-muted">aser</span> <span class="token-muted">costs</span> <span class="token-muted">$</span><span class="token-muted">2</span> <span class="token-muted">and</span> <span class="token-muted">a</span> <span class="token-muted">pencil</span> <span class="token-muted">costs</span> <span class="token-muted">$</span><span class="token-muted">3</span><span class="token-muted">.</span> <span class="token-muted">How</span> <span class="token-muted">much</span> <span class="token-muted">do</span> <span class="token-muted">6</span> <span class="token-muted">er</span><span class="token-muted">asers</span> <span class="token-muted">and</span> <span class="token-muted">8</span> <span class="token-muted">pencils</span> <span class="token-muted">cost</span><span class="token-muted">?</span>
+<span class="token-committed">def</span> <span class="token-committed">simple</span><span class="token-committed">_</span><span class="token-committed">math</span><span class="token-committed">_</span><span class="token-committed">problem</span><span class="token-committed">()</span> <span class="token-committed">-&gt;</span> <span class="token-committed">int</span><span class="token-committed">:</span>
+    <span class="token-committed">'''</span>
+    <span class="token-committed">An</span> <span class="token-committed">er</span><span class="token-committed">aser</span> <span class="token-committed">costs</span> <span class="token-committed">$</span><span class="token-committed">2</span> <span class="token-committed">and</span> <span class="token-committed">a</span> <span class="token-committed">pencil</span> <span class="token-committed">costs</span> <span class="token-committed">$</span><span class="token-committed">3</span><span class="token-committed">.</span>
+    <span class="token-committed">How</span> <span class="token-committed">much</span> <span class="token-committed">do</span> <span class="token-committed">6</span> <span class="token-committed">er</span><span class="token-committed">asers</span> <span class="token-committed">and</span> <span class="token-committed">8</span> <span class="token-committed">pencils</span> <span class="token-committed">cost</span><span class="token-committed">?</span>
+    <span class="token-committed">'''</span>
+    <span class="token-committed">total</span><span class="token-committed">_</span><span class="token-committed">cost</span> <span class="token-committed">=</span> <span class="token-committed">(</span><span class="token-committed">6</span> <span class="token-committed">*</span> <span class="token-committed">2</span><span class="token-committed">)</span> <span class="token-committed">+</span> <span class="token-committed">(</span><span class="token-committed">8</span> <span class="token-committed">*</span> <span class="token-committed">3</span><span class="token-committed">)</span>
+    <span class="token-committed">result</span> <span class="token-committed">=</span> <span class="token-committed">total</span><span class="token-committed">_</span><span class="token-committed">cost</span>
+    <span class="token-committed">return</span> <span class="token-committed">result</span><span class="token-committed">&lt;|endoftext|&gt;</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span></pre></article><article class="sample-card"><div class="sample-card__head"><span class="sample-card__steps">DBTM · Round 31</span><span class="sample-card__metrics">Committed 483/483</span></div><pre class="sample-code"><span class="token-muted">An</span> <span class="token-muted">er</span><span class="token-muted">aser</span> <span class="token-muted">costs</span> <span class="token-muted">$</span><span class="token-muted">2</span> <span class="token-muted">and</span> <span class="token-muted">a</span> <span class="token-muted">pencil</span> <span class="token-muted">costs</span> <span class="token-muted">$</span><span class="token-muted">3</span><span class="token-muted">.</span> <span class="token-muted">How</span> <span class="token-muted">much</span> <span class="token-muted">do</span> <span class="token-muted">6</span> <span class="token-muted">er</span><span class="token-muted">asers</span> <span class="token-muted">and</span> <span class="token-muted">8</span> <span class="token-muted">pencils</span> <span class="token-muted">cost</span><span class="token-muted">?</span>
+<span class="token-committed">def</span> <span class="token-committed">simple</span><span class="token-committed">_</span><span class="token-committed">math</span><span class="token-committed">_</span><span class="token-committed">problem</span><span class="token-committed">()</span> <span class="token-committed">-&gt;</span> <span class="token-committed">int</span><span class="token-committed">:</span>
+    <span class="token-committed">'''</span>
+    <span class="token-committed">An</span> <span class="token-committed">er</span><span class="token-committed">aser</span> <span class="token-committed">costs</span> <span class="token-committed">$</span><span class="token-committed">2</span> <span class="token-committed">and</span> <span class="token-committed">a</span> <span class="token-committed">pencil</span> <span class="token-committed">costs</span> <span class="token-committed">$</span><span class="token-committed">3</span><span class="token-committed">.</span>
+    <span class="token-committed">How</span> <span class="token-committed">much</span> <span class="token-committed">do</span> <span class="token-committed">6</span> <span class="token-committed">er</span><span class="token-committed">asers</span> <span class="token-committed">and</span> <span class="token-committed">8</span> <span class="token-committed">pencils</span> <span class="token-committed">cost</span><span class="token-committed">?</span>
+    <span class="token-committed">'''</span>
+    <span class="token-committed">total</span><span class="token-committed">_</span><span class="token-committed">cost</span> <span class="token-committed">=</span> <span class="token-committed">(</span><span class="token-committed">6</span> <span class="token-committed">*</span> <span class="token-committed">2</span><span class="token-committed">)</span> <span class="token-committed">+</span> <span class="token-committed">(</span><span class="token-committed">8</span> <span class="token-committed">*</span> <span class="token-committed">3</span><span class="token-committed">)</span>
+    <span class="token-committed">result</span> <span class="token-committed">=</span> <span class="token-committed">total</span><span class="token-committed">_</span><span class="token-committed">cost</span>
+    <span class="token-committed">return</span> <span class="token-committed">result</span><span class="token-committed">&lt;|endoftext|&gt;</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span><span class="token-committed">[PAD]</span></pre></article></div></div>
+<p class="paper-note">
+   Evaluated on all 1,319 GSM8K test problems. NFEs count network function evaluations.
+  </p>
+<details class="paper-details">
+<summary>
+    Sampling algorithm and refinement training
+   </summary>
+<div class="details-body">
+<div class="algorithm">
+<h3 class="algo-title">
+      Algorithm 2 · Sample with committed refinement
+     </h3>
+<p class="algo-inputs">
+<strong>
+       Input:
+      </strong>
+      trained map $T_\theta$, threshold $\kappa$, and round budget $k$. Initialize unknown tokens from the Gaussian prior; preserve any given context.
+     </p>
+<ol>
+<li>
+<strong>
+        For
+       </strong>
+       rounds $r=1,\ldots,k$, let $\mathcal R_r$ be the remaining uncommitted positions.
+      </li>
+<li>
+       Apply $T_\theta$ once to obtain a categorical proposal and confidence or learned quality scores $q^\ell$.
+      </li>
+<li class="algo-highlight">
+       Commit all positions above threshold, plus the highest-scoring positions needed to meet the floor:
+       <div class="algorithm-equation">
+        $$\Delta\mathcal C_r=\{\ell\in\mathcal R_r:q^\ell\geq\kappa\}\cup\operatorname{top}_{n_r}(\mathcal R_r;q),\qquad n_r=\left\lceil\frac{|\mathcal R_r|}{k-r+1}\right\rceil.$$
+       </div>
+</li>
+<li>
+       Pin newly committed positions to the proposal’s decoded one-hot tokens. Reset the remaining positions to prior noise for the next round.
+      </li>
+<li>
+<strong>
+        Return
+       </strong>
+       the completed sequence when all positions are committed, within at most $k$ NFEs.
+      </li>
+</ol>
+</div>
+<p>
+     The commit floor guarantees completion within the selected NFE budget. A learned quality head shares the map’s trunk and adds no extra network evaluation. LM1B and Sudoku training reuse coupled noise; the GSM8K evaluation redraws noise each round.
+    </p>
+<p>
+     Sudoku refinement-in-loop training supervises rollout states with their paired clue–solution target and needs no self-distillation.
+    </p>
+<figure class="paper-figure">
+<img alt="Sudoku solve accuracy over training, with and without refinement-in-loop" decoding="async" height="739" loading="lazy" src="static/images/sudoku_solve_acc.png" width="2400"/>
+<figcaption>
+<strong>
+       Refinement-in-loop accelerates learning.
+      </strong>
+      At four NFEs, training on rollout states improves convergence and solve accuracy across difficulty levels.
+     </figcaption>
+</figure>
+</div>
+</details>
+</div>
+</section>
+<section class="section hero is-light" id="comparison">
+<div class="container is-max-desktop content">
+<h2 class="title is-3 has-text-centered">
+   What changes with DBTM?
+  </h2>
+<p>
+   Both approaches support few-step generation. DBTM learns an autonomous endpoint map directly from data and spends additional evaluations refining a clean proposal.
+  </p>
+<div aria-label="Flow maps and DBTM comparison" class="results-table-wrap" role="region" tabindex="0">
+<table class="results-table comparison-table">
+<caption>
+     Flow maps and DBTM
+    </caption>
+<thead>
+<tr>
+<th scope="col">
+       Property
+      </th>
+<th scope="col">
+       Distilled flow maps
+      </th>
+<th scope="col">
+       DBTM
+      </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">
+       Few-step generation
+      </th>
+<td>
+       Yes
+      </td>
+<td>
+       Yes
+      </td>
+</tr>
+<tr>
+<th scope="row">
+       Time conditioning
+      </th>
+<td>
+       Two times, $s$ and $t$
+      </td>
+<td>
+       None
+      </td>
+</tr>
+<tr>
+<th scope="row">
+       Pretrained teacher flow
+      </th>
+<td>
+       Required for the distilled baselines
+      </td>
+<td>
+       Not required
+      </td>
+</tr>
+<tr>
+<th scope="row">
+       Each NFE
+      </th>
+<td>
+       A finite step along the ODE
+      </td>
+<td>
+       Refinement of a clean proposal
+      </td>
+</tr>
+<tr>
+<th scope="row">
+       Self-stopping
+      </th>
+<td>
+       Fixed sampling schedule
+      </td>
+<td>
+       Stops when all positions are committed
+      </td>
+</tr>
+<tr>
+<th scope="row">
+       Training
+      </th>
+<td>
+       Diagonal/off-diagonal objectives over time pairs
+      </td>
+<td>
+       A single state-conditioned map
+      </td>
+</tr>
+<tr>
+<th scope="row">
+       Training–inference mismatch
+      </th>
+<td>
+       Some trained time jumps go unused
+      </td>
+<td>
+       Refinement-in-loop trains on rollout states
+      </td>
+</tr>
+<tr>
+<th scope="row">
+       Self-correction
+      </th>
+<td>
+       Not inherent to the basic flow map
+      </td>
+<td>
+       Confidence- or quality-based refinement
+      </td>
+</tr>
+</tbody>
+</table>
+</section>
+<!-- BibTeX -->
+<section class="section" id="BibTeX">
+<div class="container is-max-desktop content">
+<div class="bibtex-header">
+<h2 class="title">BibTeX</h2>
+<button class="copy-bibtex-btn" onclick="copyBibTeX()" title="Copy BibTeX to clipboard">
+<i class="fas fa-copy"></i>
+<span class="copy-text">Copy</span>
+</button>
+</div>
+<pre id="bibtex-code"><code>@article{tang2026discrete,
+  title={Discrete Beckmann Transport Models for One-Step Language Modeling and Reasoning},
+  author={Sophia Tang and Shiyi Wang},
+  journal={arXiv preprint arXiv:2609.15903},
+  year={2026},
+  url={https://arxiv.org/abs/2609.15903}
+}</code></pre>
+</div>
+</section>
+</main>
+<footer class="footer">
+<div class="container">
+<div class="columns is-centered">
+<div class="column is-8">
+<div class="content">
+<p class="has-text-centered">Discrete Beckmann Transport Models  ·  University of Pennsylvania  ·  Harvard University<br/>Template from <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" rel="noopener noreferrer" target="_blank">Academic Project Page</a></p>
+</div>
+</div>
+</div>
+</div>
+</footer>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Scroll-triggered reveal animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+        document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+
+        // Scroll progress bar
+        const prog = document.getElementById('scrollProg');
+        window.addEventListener('scroll', () => {
+            const h = document.documentElement;
+            const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+            prog.style.width = pct + '%';
+        }, { passive: true });
+    });
+    </script>
+</body>
+</html>
