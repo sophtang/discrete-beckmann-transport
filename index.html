@@ -15,19 +15,24 @@
 <meta content="article" property="og:type"/>
 <meta content="Discrete Beckmann Transport Models" property="og:title"/>
 <meta content="Discrete Beckmann Transport Models (DBTM) learn an autonomous, time-independent transport map for one-step language modeling and reasoning, replacing distillation with end-to-end self-regression on the conservation equation." property="og:description"/>
-<!-- PLACEHOLDER: project page URL -->
-<meta content="#" property="og:url"/>
+<meta content="https://sophtang.github.io/discrete-beckmann-transport/" property="og:url"/>
+<meta content="https://sophtang.github.io/discrete-beckmann-transport/static/images/discrete-btm.png" property="og:image"/>
 <meta content="1200" property="og:image:width"/>
 <meta content="630" property="og:image:height"/>
 <meta content="Discrete Beckmann Transport Models" property="og:image:alt"/>
 <meta content="Sophia Tang" property="article:author"/>
 <meta content="autonomous flows" property="article:tag"/>
 <meta content="one-step generation" property="article:tag"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="Discrete Beckmann Transport Models" name="twitter:title"/>
+<meta content="https://sophtang.github.io/discrete-beckmann-transport/static/images/discrete-btm.png" name="twitter:image"/>
 <!-- Academic/Research Specific -->
 <meta content="Discrete Beckmann Transport Models for One-Step Language Modeling and Reasoning" name="citation_title"/>
 <meta content="Tang, Sophia" name="citation_author"/>
 <meta content="Wang, Shiyi" name="citation_author"/>
 <meta content="2026" name="citation_publication_date"/>
+<meta content="2609.15903" name="citation_arxiv_id"/>
+<meta content="https://arxiv.org/pdf/2609.15903" name="citation_pdf_url"/>
 <!-- Additional SEO -->
 <meta content="#6B67EE" name="theme-color"/>
 <meta content="#6B67EE" name="msapplication-TileColor"/>
@@ -39,6 +44,7 @@
 <link href="https://ajax.googleapis.com" rel="preconnect"/>
 <link href="https://cdn.jsdelivr.net" rel="preconnect"/>
 <title>Discrete Beckmann Transport Models</title>
+<link href="https://sophtang.github.io/discrete-beckmann-transport/" rel="canonical"/>
 <!-- Favicon and App Icons -->
 <link href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='.9em' font-size='90'&gt;🛸&lt;/text&gt;&lt;/svg&gt;" rel="icon"/>
 <link href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='.9em' font-size='90'&gt;🛸&lt;/text&gt;&lt;/svg&gt;" rel="apple-touch-icon"/>
@@ -94,8 +100,8 @@
       }
     }
   ],
-  "url": "https://arxiv.org/abs/2609.15903",
-  "image": "static/images/discrete-btm.png",
+  "url": "https://sophtang.github.io/discrete-beckmann-transport/",
+  "image": "https://sophtang.github.io/discrete-beckmann-transport/static/images/discrete-btm.png",
   "keywords": [
     "Beckmann transport",
     "autonomous flow",
@@ -110,7 +116,10 @@
   ],
   "isAccessibleForFree": true,
   "license": "https://opensource.org/licenses/MIT",
-  "sameAs": "https://www.alphaxiv.org/abs/2609.15903"
+  "sameAs": [
+    "https://arxiv.org/abs/2609.15903",
+    "https://www.alphaxiv.org/abs/2609.15903"
+  ]
 }
 </script>
 <meta content="2609.15903" name="citation_arxiv_id"/><meta content="https://arxiv.org/pdf/2609.15903" name="citation_pdf_url"/></head>
@@ -165,6 +174,18 @@
 <span>alphaXiv</span>
 </a>
 </span>
+<span class="link-block">
+<a class="external-link button is-normal is-rounded is-dark" href="https://youtu.be/hfM0ULRC3qA" rel="noopener noreferrer" target="_blank" title="Watch the Discrete Diffusion Reading Group talk on YouTube">
+<span class="icon"><i class="fab fa-youtube"></i></span>
+<span>Talk</span>
+</a>
+</span>
+<span class="link-block">
+<a class="external-link button is-normal is-rounded is-dark" href="blog/" title="Read the blog post: How to Train a One-Step Language Model Without a Teacher">
+<span class="icon"><i class="fas fa-pen-nib"></i></span>
+<span>Blog</span>
+</a>
+</span>
 <!-- BibTeX: jumps to the citation block at the bottom of the page -->
 <span class="link-block">
 <a class="external-link button is-normal is-rounded is-dark" href="#BibTeX" title="Jump to the BibTeX citation">
@@ -183,9 +204,9 @@
 <div class="container is-max-desktop">
 <div class="hero-body has-text-centered hero-fade hero-fade-5">
 <video aria-label="Discrete Beckmann Transport Models overview animation" autoplay="" class="cover-video" controls="" loop="" muted="" playsinline="" poster="static/images/discrete-btm.png" preload="metadata">
-<source src="static/images/dbtm-vid-final.mp4" type="video/mp4"/>
+<source src="static/images/dbtm_movie_large.mp4" type="video/mp4"/>
     Your browser does not support embedded video.
-    <a href="static/images/dbtm-vid-final.mp4">
+    <a href="static/images/dbtm_movie_large.mp4">
      Download the overview video
     </a>
     .
@@ -209,6 +230,9 @@
  </a>
 <a href="#comparison">
   Comparison
+ </a>
+<a href="#video">
+  Talk
  </a>
 </nav>
 <div class="container is-max-desktop abstract-details">
@@ -1019,6 +1043,15 @@ There are a lot of differences. There are people in this country. There are happ
 </tr>
 </tbody>
 </table>
+</section>
+<!-- Video -->
+<section class="section" id="video">
+<div class="container is-max-desktop content">
+<h2 class="title is-3 has-text-centered">Reading Group Presentation</h2>
+<div class="publication-video">
+<iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="" frameborder="0" loading="lazy" src="https://www.youtube.com/embed/hfM0ULRC3qA" title="DBTM Discrete Diffusion Reading Group talk"></iframe>
+</div>
+</div>
 </section>
 <!-- BibTeX -->
 <section class="section" id="BibTeX">

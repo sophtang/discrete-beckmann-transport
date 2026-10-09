@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to Train a One-Step Language Model Without a Teacher</title>
+<meta name="description" content="An illustrated, interactive walkthrough of Discrete Beckmann Transport Models: autonomous flows on the simplex, a one-step transport map learned without a teacher, and fixed-point refinement for language modeling and reasoning.">
+<meta name="author" content="Sophia Tang, Shiyi Wang">
+<meta name="theme-color" content="#3a3cb1">
+<meta property="og:title" content="How to Train a One-Step Language Model Without a Teacher">
+<meta property="og:description" content="One-step language modeling and reasoning with an autonomous transport map on the simplex — no teacher, no time conditioning.">
+<meta property="og:image" content="media/posters/c09_transport_map.jpg">
+<link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='.9em' font-size='90'&gt;🛸&lt;/text&gt;&lt;/svg&gt;">
+<script>
+  // Apply a saved theme before first paint.
+  try { var t = localStorage.getItem('dbtm-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Volkhov:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<link rel="stylesheet" href="blog.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script defer src="blog.js"></script>
+</head>
+<body>
+<a class="skip" href="#article">Skip to article</a>
+
+<header class="sticky-header">
+  <div class="sticky-header-inner">
+    <a class="sticky-title" href="#top">How to Train a One-Step Language Model Without a Teacher</a>
+    <nav class="header-links" aria-label="Page controls">
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<section class="hero" id="top">
+  <div class="hero-inner">
+    <a class="back-link" href="../">&larr; Back to the project page</a>
+    <p class="eyebrow">Technical blog</p>
+    <h1>How to Train a One-Step Language Model Without a Teacher</h1>
+    <p class="deck">One- and few-step generative models for text usually get their speed by distilling a well-trained teacher model. For flow and diffusion language models, this requires a costly two-stage training pipeline. In our work, we show that one can train the endpoint map of a time-independent flow directly from data without a teacher, obtain clean sequences in one step, and refine the output with each additional NFE.</p>
+    <p class="blog-meta">Based on <a href="https://arxiv.org/abs/2609.15903"><em>Discrete Beckmann Transport Models for One-Step Language Modeling and Reasoning</em></a> by<br>Sophia Tang and Shiyi Wang.</p>
+    <p class="read-more"><a href="https://arxiv.org/abs/2609.15903">arXiv</a><a href="https://www.alphaxiv.org/pdf/2609.15903">alphaXiv</a><a href="#bibtex">BibTeX</a></p>
+  </div>
+</section>
+
+<section class="author-section">
+  <div class="author-grid">
+    <div>
+      <p class="label">Authors</p>
+      <p><a href="http://sophtang.github.io/">Sophia Tang</a></p>
+    </div>
+    <div>
+      <p class="label">Affiliations</p>
+      <p>University of Pennsylvania<br>Harvard University</p>
+    </div>
+    <div>
+      <p class="label">Published</p>
+      <p>Oct 6, 2026</p>
+    </div>
+  </div>
+</section>
+
+<div class="layout">
+  <nav class="toc" id="toc" aria-label="Contents">
+    <h4>Contents</h4>
+    <ol>
+      <li><a href="#challenge"><span class="toc-num">01</span>The few-step challenge</a>
+        <ol>
+          <li><a href="#parallel">Parallel decoding</a></li>
+          <li><a href="#interpolants">Stochastic interpolants</a></li>
+          <li><a href="#simplex">Flows on the simplex</a></li>
+          <li><a href="#cost">The cost of sampling</a></li>
+          <li><a href="#flowmaps">Flow maps</a></li>
+          <li><a href="#bottleneck">The distillation bottleneck</a></li>
+        </ol>
+      </li>
+      <li><a href="#autonomous"><span class="toc-num">02</span>Autonomous flows</a>
+        <ol>
+          <li><a href="#time-average">Averaging out time</a></li>
+          <li><a href="#beckmann">Beckmann's problem</a></li>
+          <li><a href="#convergence">Every path ends on a vertex</a></li>
+          <li><a href="#straighter">Straighter trajectories</a></li>
+          <li><a href="#equations">Eulerian &amp; conservation</a></li>
+          <li><a href="#transport-map">The transport map</a></li>
+        </ol>
+      </li>
+      <li><a href="#learning"><span class="toc-num">03</span>Learning without distillation</a>
+        <ol>
+          <li><a href="#iterate">Iterating the equation</a></li>
+          <li><a href="#partial">Partially trained maps</a></li>
+          <li><a href="#objectives">Training objectives</a></li>
+          <li><a href="#commitment">Commitment time</a></li>
+          <li><a href="#vocab">Across vocabularies</a></li>
+        </ol>
+      </li>
+      <li><a href="#refinement"><span class="toc-num">04</span>Fixed-point refinement</a>
+        <ol>
+          <li><a href="#context">Clean-context interpolant</a></li>
+          <li><a href="#commit-renoise">Commit, renoise, refine</a></li>
+          <li><a href="#commit-rules">Commitment rules</a></li>
+          <li><a href="#gap">Train–inference gap</a></li>
+          <li><a href="#ril">Refinement-in-loop</a></li>
+        </ol>
+      </li>
+      <li><a href="#experiments"><span class="toc-num">05</span>Experiments</a>
+        <ol>
+          <li><a href="#dynamics">Time-dependent dynamics</a></li>
+          <li><a href="#language">Language modeling</a></li>
+          <li><a href="#reasoning">Reasoning</a></li>
+          <li><a href="#comparison">vs. flow maps</a></li>
+        </ol>
+      </li>
+      <li><a href="#conclusions"><span class="toc-num">06</span>Conclusions</a></li>
+      <li><a href="#references"><span class="toc-num">··</span>References</a></li>
+    </ol>
+  </nav>
+
+  <article id="article">
+    <details class="mobile-toc">
+      <summary>Contents</summary>
+      <ol>
+        <li><a href="#challenge">The challenge of few-step discrete generation</a></li>
+        <li><a href="#autonomous">Autonomous flows on the simplex</a></li>
+        <li><a href="#learning">Learning one-step maps without distillation</a></li>
+        <li><a href="#refinement">Training and sampling with fixed-point refinement</a></li>
+        <li><a href="#experiments">Experiments in language modeling and reasoning</a></li>
+        <li><a href="#conclusions">Conclusions</a></li>
+      </ol>
+    </details>
+
+    <div class="key-idea tldr">
+      <span class="tag">TL;DR</span>
+      Discrete Beckmann Transport Models (DBTM) introduce a new family of one-step language models that learn the endpoint map of a time-independent flow directly from data, with no teacher. Each extra function evaluation refines a complete sequence, achieving the Pareto frontier on LM1B and OWT and <strong>84.6%</strong> and <strong>16.8%</strong> accuracy on Sudoku and GSM8K in few NFE. <a href="#ref-dbtm">[1]</a>
+    </div>
+
+    <figure class="fig hero-fig">
+      <div class="fig-frame">
+        <video src="media/c01_title_one_step.mp4" poster="media/posters/c01_title_one_step.jpg" muted loop playsinline preload="metadata" controls data-player aria-label="Animation: Gaussian samples around the 2-simplex are carried straight to its vertices by the transport map."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 1</span><strong>Transport map to the simplex in one-step.</strong> Gaussian samples $x_0\sim\mathcal N(0,\sigma^2 I)$ in the ambient space around the simplex are carried by a single transport map $T_\theta$ to the vertices $\{e_1,\dots,e_V\}^L$, which are clean tokens. The rest of this post explains where that map comes from and how to learn it.</figcaption>
+    </figure>
+
+    <p>Autoregressive language models generate one token at a time from left-to-right. Diffusion and flow models start from noise and denoise <em>every position in parallel</em>, which promises faster generation and bidirectional context. However, parallel decoding only matters if it significantly reduces the denoising steps needed to obtain a clean sequence, and that is exactly where discrete generative models struggle.</p>
+    <p>In this article, we will start with why few-step discrete generation is hard and why the usual fix, distilling a flow map from a teacher, is expensive. Then we look at what happens when a flow's velocity field no longer depends on time. Its trajectories end at the vertices of the simplex, and the map to those endpoints satisfies a simple conservation equation. That equation can be solved directly from data with an iterative optimization algorithm that is minimized at the time-independent one-step map at convergence. Finally, we turn the learned map into a sampler whose extra function evaluations act as refinement steps instead of ODE integration steps, and show that it excels on language modeling, Sudoku, and GSM8K against both continuous and discrete diffusion baselines in few NFE.</p>
+
+    <div class="note">
+      <span class="tag">Notation</span>
+      $x$ is a state and $X_s(x)$ is the <em>autonomous flow</em> started from $x$, run for time $s$. $T(x)=X_{\tau(x)}(x)$ is the <em>transport map</em> associated with this flow, defined as the state the flow reaches at its hitting time $\tau(x)$ on the data. We reserve $t\in[0,1]$ for <em>interpolation</em> time and $s\ge 0$ for <em>autonomous evolution</em> time. For a sequence, $x^\ell$ is position $\ell$ and $x^\ell_j$ is vocabulary coordinate $j$. $\mu_0$ is the Gaussian prior, $\mu_1$ the data distribution, and $M_1=\operatorname{supp}(\mu_1)$ its support.
+    </div>
+
+    <!-- ═══════════════════════════ PART 1 ═══════════════════════════ -->
+    <header class="part" id="challenge">
+      <span class="part-num">Part 01</span>
+      <h2>The challenge of few-step discrete generation</h2>
+      <p>Why parallel decoding needs many steps, and why compressing a flow usually needs a teacher.</p>
+    </header>
+
+    <h3 id="parallel"><span class="h-num">1.1</span>Parallel decoding breaks joint structure</h3>
+    <p class="h3-sub q">Why does masked discrete diffusion need so many steps?</p>
+    <p>Consider a training set with exactly two sequences, <em>New York</em> and <em>San Francisco</em>, each with probability ½. A masked diffusion model sees both positions masked and predicts each one from the same context. Its marginals are correct, since the first position is <em>New</em> or <em>San</em> with probability ½ each, and the second is <em>York</em> or <em>Francisco</em> with probability ½ each.</p>
+    <p>The problem appears when we sample both positions <em>at once</em>. Because each position is drawn independently, half the samples are <em>New Francisco</em> or <em>San York</em>, which never appeared in the data. With two steps, we unmask one position, condition on it, and only then predict the next, so every sample is valid. In general, discrete diffusion approximates each transition by a product over positions,</p>
+    $$p_{t\mid s}(y_t\mid y_s)\;\approx\;\prod_{\ell=1}^{L}p^{\ell}_{t\mid s}\big(y^\ell_t\mid y_s\big),$$
+    <p>which is nearly exact for tiny steps and increasingly wrong for large ones. <strong>Fewer steps means more tokens per step, which means more factorization error.</strong> No amount of model capacity fixes this, because a product of marginals cannot represent the correlation.</p>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <video src="media/c02_factorization.mp4" poster="media/posters/c02_factorization.jpg" muted loop playsinline preload="none" controls data-player data-chapters="3.4:One step|6.5:Mixtures|11.3:Two steps" aria-label="Animation of factorization error in one-step versus two-step masked decoding."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 2</span><strong>Factorization error.</strong> Each masked position is predicted independently. Sampling both at once produces the mixtures <em>New Francisco</em> and <em>San York</em> half the time. Unmasking one position and conditioning on it before predicting the next recovers the joint structure.</figcaption>
+    </figure>
+
+    <h3 id="interpolants"><span class="h-num">1.2</span>Generative flows and stochastic interpolants</h3>
+    <p class="h3-sub">A continuous-time path between a prior and the data distribution</p>
+    <p>Flow-based models avoid the factorization altogether. A stochastic interpolant <a href="#ref-si">[5]</a> connects a sample from the prior to a sample from the data along an endpoint-conditioned path, and the model learns the average velocity of all paths passing through each point.</p>
+    <div class="eq-grid">
+      <div class="eq-box"><span class="eq-label">Interpolant</span>
+        $$\begin{gathered}x_t=I_t(x_0,x_1)=\alpha_t x_0+(1-\alpha_t)x_1\\ x_0\sim\mu_0,\quad x_1\sim\mu_1\end{gathered}$$
+      </div>
+      <div class="eq-box sky"><span class="eq-label">Marginal velocity</span>
+        $$b_t(x):=\mathbb E_{x_0,x_1}\big[\dot I_t\mid I_t=x\big]$$
+      </div>
+    </div>
+    <p>Here $\alpha_0=1$ and $\alpha_1=0$, so $I_0=x_0$ and $I_1=x_1$. We use the schedule $\alpha_t=(1-t)^a$, where $a=1$ gives the linear interpolant. Each path $(x_0,x_1)$ has its own velocity $\dot I_t$. Many paths cross the same point at the same time, so the regression target $b_t(x)$ is their <em>conditional mean</em>. Integrating $\dot X_t=b_t(X_t)$ from $X_0\sim\mu_0$ reproduces the interpolant's marginals at every time, so $X_1\sim\mu_1$.</p>
+
+    <h3 id="simplex"><span class="h-num">1.3</span>Continuous flows on the simplex</h3>
+    <p class="h3-sub q">How do we generate discrete sequences with a continuous flow?</p>
+    <p>Embed token $j$ as the one-hot vector $e_j\in\mathbb R^V$. The convex hull of these vectors is the probability simplex $\Delta^{V-1}$, and a sequence of $L$ tokens is a vertex configuration in $(\Delta^{V-1})^L$. The data distribution therefore lives on a very low-dimensional set, the vertices of the simplex.</p>
+    <div class="eq-box"><span class="eq-label">Data manifold = vertices of the simplex</span>
+      $$M_1=\operatorname{supp}(\mu_1)=\big(\{e_1,\dots,e_V\}\big)^L\subset\big(\Delta^{V-1}\big)^L$$
+    </div>
+    <p>We draw $x_0\sim\mathcal N(0,\sigma^2 I_V)$ independently at each position in the ambient space $\mathbb R^{V\times L}$ and flow toward the vertices. At the end, we read off each token with an argmax.</p>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <video src="media/c03_simplex_sequence.mp4" poster="media/posters/c03_simplex_sequence.jpg" muted loop playsinline preload="none" controls data-player aria-label="Animation: each position of a sequence moves inside its own simplex from noise to a vertex."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 3</span><strong>A sequence is a point in a product of simplices.</strong> Each of the six positions starts from Gaussian noise and moves toward a vertex of its own simplex as $t$ goes from 0 to 1. An argmax at each position decodes the sentence.</figcaption>
+    </figure>
+
+    <div class="key-idea">
+      <span class="tag">Key idea</span>
+      Although the prior factorizes across positions, the flow that transports it does not. Every coordinate of $b_t$ can depend on the <em>entire</em> sequence state, so a deterministic joint transformation of independent noise can produce correlated tokens. Continuous flows do not need the factorization assumption.
+    </div>
+
+    <h3 id="cost"><span class="h-num">1.4</span>The cost of sampling with many function evaluations</h3>
+    <p class="h3-sub">Integrating the ODE requires many small steps</p>
+    <p>The catch is inference cost. To follow $b_t$ accurately, a flow-matching sampler needs many small Euler steps, and each step is one network evaluation (NFE). Reducing that count means taking fewer, larger steps, which requires knowing where a trajectory goes over a finite interval rather than only its instantaneous direction. A <em>flow map</em> provides exactly this by learning the solution operator, so it can take large jumps along the same trajectory.</p>
+    <div class="eq-grid">
+      <div class="eq-box"><span class="eq-label">Flow matching · many Euler steps</span>
+        $$\hat x_1=x_{t_0}+\sum_{i=0}^{N-1}b_{t_i}(x_{t_i})\,\Delta t$$
+      </div>
+      <div class="eq-box sky"><span class="eq-label">Flow maps · large jumps</span>
+        $$\hat x_1=X_{0.5,1}\big(X_{0,0.5}(x_0)\big)$$
+      </div>
+    </div>
+
+    <h3 id="flowmaps"><span class="h-num">1.5</span>Flow maps for trajectory distillation</h3>
+    <p class="h3-sub">Jumping directly between any two times along the ODE</p>
+    <p>A flow map $X_{s,t}$ sends the state at time $s$ to the state at time $t$ on the same trajectory. It is convenient to write it in terms of a <em>mean velocity</em> over the interval <a href="#ref-boffi">[8]</a>.</p>
+    <div class="eq-box"><span class="eq-label">Two-time flow map</span>
+      $$X_{s,t}(x_s)=x_t=x_s+(t-s)\,v_{s,t}(x_s),\qquad\forall\,s,t\in[0,1]$$
+    </div>
+    <p>On the diagonal, $v_{s,s}=b_s$, so the instantaneous velocity can be trained with the usual flow-matching loss. Off the diagonal, there is no direct regression target. The model must learn how local predictions <em>compose</em>, which requires consistency objectives such as the semigroup identity $X_{t,u}\circ X_{s,t}=X_{s,u}$. Discrete targets add one more difficulty, because the posterior over token identity changes abruptly within a narrow window of $t$, which motivates the time reparameterization used by <a href="https://one-step-lm.github.io/blog/">flow map language models</a> <a href="#ref-fmlm">[3]</a>.</p>
+
+    <h3 id="bottleneck"><span class="h-num">1.6</span>The distillation bottleneck</h3>
+    <p class="h3-sub">Few-step flow maps depend on a pretrained teacher and time conditioning</p>
+    <p>Flow maps make few-step generation possible, but the way they are usually trained introduces two costs.</p>
+    <ol>
+      <li><strong>Few-step flow maps are distilled from a teacher flow.</strong> The student is capped at the teacher's quality and needs a two-stage pipeline. Self-distillation avoids the teacher by bootstrapping from the model's own predictions, but then it chases a moving target.</li>
+      <li><strong>Flow maps are conditioned on time.</strong> A two-time map $X_{s,t}$ has to learn every jump between every pair $(s,t)$, both diagonal and off-diagonal. That is a far larger space of targets than a sampler ever visits.</li>
+    </ol>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <video src="media/c04_distillation_vs_direct.mp4" poster="media/posters/c04_distillation_vs_direct.jpg" muted loop playsinline preload="none" controls data-player aria-label="Diagram comparing a two-stage distillation pipeline with direct training of a transport map."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 4</span><strong>Two pipelines.</strong> Flow-map distillation (top) trains a teacher flow $b_t$ to convergence, then distills $X_{s,t}$ from it. For FMLM on LM1B, that is a 1M-step teacher plus 100K distillation steps, and the student's quality is capped by the teacher. DBTM (bottom) trains a single transport map $T_\theta$ from data, with no teacher and no time input, in 200K steps on LM1B.</figcaption>
+    </figure>
+
+    <p>What we want is a one-step map that jumps to a clean sequence <em>every</em> time it is applied, and that we can learn from data alone.</p>
+    <p class="question"><span class="q-label">The question</span>Can we learn a one-step map directly from data, with no teacher and no time conditioning?</p>
+
+    <!-- ═══════════════════════════ PART 2 ═══════════════════════════ -->
+    <header class="part" id="autonomous">
+      <span class="part-num">Part 02</span>
+      <h2>Autonomous flows on the simplex</h2>
+      <p>Remove time from the velocity field, and what remains are fixed basins, absorbing vertices, and a map that is constant along every path.</p>
+    </header>
+
+    <h3 id="time-average"><span class="h-num">2.1</span>Taking the time average of the flow velocity</h3>
+    <p class="h3-sub q">What if the velocity field did not depend on time?</p>
+    <p>Keep the same interpolant, but regress the velocity onto a field that sees only the state, with $t\sim\mathcal U[0,1]$ hidden from the model.</p>
+    <div class="eq-grid">
+      <div class="eq-box"><span class="eq-label">Time-dependent</span>
+        $$b_t(x):=\mathbb E_{x_0,x_1}\big[\dot I_t\mid I_t=x\big]$$
+      </div>
+      <div class="eq-box mint"><span class="eq-label">Autonomous · the same at every step</span>
+        $$b(x):=\mathbb E_{t,x_0,x_1}\big[\dot I_t\mid I_t=x\big]$$
+      </div>
+    </div>
+    <p>The minimizer is still a conditional expectation, but now it averages over <em>time</em> as well as over endpoints. Write $\mu_t$ for the density of $I_t$. Because $t$ is uniform, a training state $x$ was produced at time $t$ with posterior probability $p(t\mid x)=\mu_t(x)/\int_0^1\mu_{t'}(x)\,dt'$. By the tower property,</p>
+    <div class="eq-box mint"><span class="eq-label">Posterior-weighted time average</span>
+      $$b(x)=\int_0^1 b_t(x)\,p(t\mid x)\,dt=\frac{\int_0^1\mu_t(x)\,b_t(x)\,dt}{\int_0^1\mu_t(x)\,dt}.$$
+    </div>
+    <p>Each time slice contributes where it is likely to have produced $x$. This is not a uniform average of the fields $b_t$. The resulting field defines an <em>autonomous</em> ODE, $\tfrac{d}{ds}X_s(x)=b(X_s(x))$ with $X_0(x)=x$. The autonomous flow runs on a separate clock (denoted $s\in [0,\infty)$) to the time-dependent flow and nothing forces it to reach the target at $s=1$, so it instead runs over a potentially infinite time horizon with hitting time $\tau(x)$.</p>
+    <p><strong>What the time-dependent field does.</strong> For a single token with vertex probabilities $p_j$ and the linear schedule, the endpoint posterior is a softmax, $w_j(x,t)\propto p_j\exp\!\big(\beta(t)x_j\big)$ with $\beta(t)=t/\big(\sigma^2(1-t)^2\big)$. The field is $b_t(x)=\big(D_t(x)-x\big)/(1-t)$, where $D_t=\sum_j w_j e_j$ is the posterior-mean denoiser. If we freeze $t$, the equilibria solve $x=\operatorname{softmax}(\log p+\beta(t)x)$. At $t=0$ there is a single attractor at the mean $p$. As $\beta$ grows, new attractors appear <em>at staggered times</em> and move from the interior toward the vertices. A particle chasing moving attractors follows a curved path.</p>
+    <p><strong>What the autonomous field does.</strong> Its stable equilibria are exactly the vertices, and its basins of attraction never move.</p>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <video src="media/c05_time_vs_autonomous_field.mp4" poster="media/posters/c05_time_vs_autonomous_field.jpg" muted loop playsinline preload="none" controls data-player aria-label="Side-by-side animation of a time-dependent field that changes with t and an autonomous field that does not."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 5</span><strong>Moving versus fixed destinations.</strong> On the left, the time-dependent field $b_t$ evolves as $t$ advances, and its attractors appear at staggered times inside the simplex before converging on the vertices. On the right, the autonomous field $b$ is stationary, with stable equilibria only at the vertices.</figcaption>
+    </figure>
+
+    <div class="widget" id="w-field" data-widget="field">
+      <div class="widget-frame">
+        <div class="widget-head"><span class="w-title">Freeze the clock and find the attractors</span><span class="w-kind">Interactive 1 · computed live</span></div>
+        <div class="widget-body">
+          <div class="controls">
+            <div class="control"><span class="c-top"><span>interpolation time $t$</span><output data-role="tval">0.30</output></span><input type="range" min="0" max="0.97" step="0.01" value="0.30" data-role="t" aria-label="Interpolation time t"></div>
+            <button class="btn" type="button" data-role="play" aria-pressed="false">▶ Sweep <em>t</em></button>
+          </div>
+          <div class="canvas-pair">
+            <div><p class="canvas-title">time-dependent $b_t(x)$</p><p class="canvas-sub" data-role="tdsub">frozen at t = 0.30</p><div class="canvas-wrap"><canvas data-role="left" width="560" height="520" aria-label="Arrow plot of the time-dependent field"></canvas></div></div>
+            <div><p class="canvas-title">autonomous $b(x)$</p><p class="canvas-sub">the same for every $t$</p><div class="canvas-wrap"><canvas data-role="right" width="560" height="520" aria-label="Arrow plot of the autonomous field"></canvas></div></div>
+          </div>
+          <div class="legend"><span><i style="background:#3a3cb1;border-radius:50%"></i>stable equilibrium of the frozen field</span><span><i style="background:#e4e2fe"></i>simplex $\Delta^2$</span></div>
+          <p class="status-line" data-role="status"></p>
+        </div>
+      </div>
+      <p class="widget-caption">Both fields are computed exactly in your browser for a single token with $V=3$, $p=(0.45,0.33,0.22)$, $\sigma=0.55$, and a linear interpolant. They are shown on the invariant plane $\sum_jx_j=1$. The autonomous field is the posterior-weighted time integral above, evaluated by quadrature. Sweep $t$ and watch the frozen field's attractors split and migrate while the autonomous panel stays put.</p>
+    </div>
+
+
+    <h3 id="beckmann"><span class="h-num">2.2</span>Beckmann's transportation problem</h3>
+    <p class="h3-sub q">Does the autonomous flow provably generate the target distribution?</p>
+    <p>An autonomous flow does not reproduce the interpolant's marginals at intermediate times, but it inherits a conservation law from them. Integrating the continuity equation $\partial_t\mu_t+\nabla\cdot(b_t\mu_t)=0$ over $t\in[0,1]$ telescopes the time derivative into the two endpoint densities.</p>
+    <div class="eq-box"><span class="eq-label">Continuity equation → divergence condition</span>
+      $$\int_0^1\nabla\cdot(b_t\mu_t)\,dt=-\int_0^1\partial_t\mu_t\,dt\quad\Longrightarrow\quad\nabla\cdot j=\mu_0-\mu_1$$
+    </div>
+    <div class="eq-grid">
+      <div class="eq-box sky"><span class="eq-label">Current</span>
+        $$j=\nu\,b=\int_0^1 b_t\,\mu_t\,dt$$
+      </div>
+      <div class="eq-box sky"><span class="eq-label">Occupation measure</span>
+        $$\nu(x):=\int_0^1\mu_t(x)\,dt$$
+      </div>
+    </div>
+    <p>The prior supplies probability mass into the time-integrated current $j$ (source), and the data manifold becomes the sink that removes it. Because $\nu\gt0$ away from the data, $j$ and $b$ point in the same direction. They share oriented flow lines and differ only in speed, so the autonomous flow moves mass along the lines of a current that starts at $\mu_0$ and ends at $\mu_1$. When $\mu_1$ is singular, as it is for discrete data, the equality holds in the distributional sense. This source–sink constraint is the one in Beckmann's transportation problem <a href="#ref-beckmann">[6]</a>, which gives the method its name, and its connection to Beckmann's problem and to optimal transport is developed in the Beckmann Transport Models paper <a href="#ref-btm">[2]</a>.</p>
+    <p>The divergence condition alone does not rule out mass escaping to infinity or stalling in the interior. Under conditions on the prior, the target support, and the interpolant, the BTM analysis shows that the autonomous flow reaches the target support in finite time and that its endpoint map pushes the prior onto the target, $T_\#\mu_0=\mu_1$ <a class="cite" href="https://www.alphaxiv.org/pdf/2608.01692" target="_blank" rel="noopener">[2, Prop. 1]</a>. The next section states the corresponding result on the simplex.</p>
+
+    <figure class="fig square">
+      <div class="fig-frame">
+        <video src="media/c06_autonomous_flow.mp4" poster="media/posters/c06_autonomous_flow.jpg" muted loop playsinline preload="none" controls data-player aria-label="Animation of prior samples flowing along the autonomous field into the three vertices."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 6</span><strong>The autonomous flow.</strong> Prior samples follow the stationary field $b$ (dashed flow lines) and collect at the three vertices. The clock $s$ runs past 1, since each trajectory takes as long as it needs.</figcaption>
+    </figure>
+
+    <h3 id="convergence"><span class="h-num">2.3</span>Every path ends on a vertex</h3>
+    <p class="h3-sub">Convergence of the autonomous flow on the vertices of the simplex in finite time</p>
+    <p>The divergence identity alone does not rule out probability escaping to infinity or getting trapped in the interior. Our convergence theorem closes those gaps for the simplex <a class="cite" href="https://www.alphaxiv.org/pdf/2609.15903" target="_blank" rel="noopener">[1, Thm. 3.1]</a>, building on the continuous-state result for Beckmann transport models <a href="#ref-btm">[2]</a>. For almost every starting point $x_0$, the following three properties hold.</p>
+    <div class="eq-grid">
+      <div class="eq-box"><span class="eq-label">(i) Absorption</span>
+        $$X_s(x_0)=X_{s^\star}(x_0)\quad\text{for } s\gt s^\star$$
+      </div>
+      <div class="eq-box"><span class="eq-label">(ii) Convergence</span>
+        $$\lim_{s\to\infty}X_s(x_0)=x^\star(x_0)\in M_1$$
+      </div>
+      <div class="eq-box full"><span class="eq-label">(iii) Finite hitting time</span>
+        $$\lim_{r\downarrow0}b(e_j+r\omega)=-\kappa_j(\omega)\,\omega$$
+      </div>
+    </div>
+    <p>Part (iii) proves a unique feature of the autonomous flow of the linear interpolant. The field vanishes at the vertex, but its <em>limit</em> along every incoming direction $\omega$ has speed $\kappa_j(\omega)\ge\kappa_-\gt0$. Writing $r(s)=\|X_s-e_j\|$, once a trajectory is close enough, we get</p>
+    $$\frac{dr}{ds}=\Big\langle\tfrac{X_s-e_j}{\|X_s-e_j\|},\,b(X_s)\Big\rangle\le-\frac{\kappa_-}{2},$$
+    <p>so the remaining travel time is at most $2r(s_{\text{entry}})/\kappa_-$. The particle arrives with nonzero speed and then stops at finite time.</p>
+    <p><strong>What happens exactly at a vertex.</strong> The limit above is not the value <em>at</em> the vertex. If $\alpha_t\sim(1-t)^a$ as $t\to1$ with $a\ge1/V$ and the prior decays exponentially, the autonomous field vanishes at every vertex, $b(e_j)=0$, so absorbed trajectories stay put <a class="cite" href="https://www.alphaxiv.org/pdf/2609.15903" target="_blank" rel="noopener">[1, Thm. C.1]</a>. For the linear interpolant the field is therefore discontinuous at the vertices, vanishing at $e_j$ but approaching it with speed at least $\kappa_-$. This discontinuity is what makes arrival take finite time. If the schedule instead slows to a stop, $\dot\alpha_1=0$, then $b(x)\to0$ as $x\to e_j$ and the field is continuous at the vertices <a class="cite" href="https://www.alphaxiv.org/pdf/2609.15903" target="_blank" rel="noopener">[1, Prop. C.5]</a>. The speed bound above is specific to the linear case.</p>
+    <p><strong>Why no mass escapes or stalls.</strong> We prove two lemmas that justify why no mass escapes or stalls away from the vertices <a class="cite" href="https://www.alphaxiv.org/pdf/2609.15903" target="_blank" rel="noopener">[1, Lemmas C.4–C.5]</a>. Far from the simplex the field behaves like $b(x)=-x\,(1+o(1))$, so $\langle b(x),x\rangle\lt0$ outside some ball $B(0,R_0)$, so every trajectory enters the ball in finite time and never leaves it. Inside the ball, the divergence condition away from the data, $\nabla\cdot(\nu b)=\mu_0$, gives $\tfrac{d}{ds}\big[\nu(X_s)\,J_s\big]=\mu_0(X_s)\,J_s$, where $J_s$ is the Jacobian determinant of the flow. A set of starting points that never approaches the data would carry an occupation mass that grows exponentially, by Grönwall's inequality, while staying bounded by $\nu$ of a bounded region. So that set has Lebesgue measure zero (it occupies no volume). Combined with finite arrival near the vertices, this gives the three properties of Theorem 3.1.</p>
+
+    <figure class="fig wide3">
+      <div class="fig-frame">
+        <video src="media/c22_theorem_convergence.mp4" poster="media/posters/c22_theorem_convergence.jpg" muted loop playsinline preload="none" controls data-player aria-label="Three-panel animation illustrating absorption, convergence, and finite hitting time."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 7</span><strong>The three parts of the theorem.</strong> (i) A trajectory reaches its vertex at $s^\star$ and stays there. (ii) Every prior sample converges to a vertex in the long-time limit (300/300 in this toy). (iii) Near $e_1$ the field points inward from every direction, with limiting speed at least $\kappa_-$, and vanishes only <em>at</em> the vertex.</figcaption>
+    </figure>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <video src="media/c07_hitting_time.mp4" poster="media/posters/c07_hitting_time.jpg" muted loop playsinline preload="none" controls data-player aria-label="Animation of three trajectories each stopping at its own finite hitting time."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 8</span><strong>Each path stops at its own hitting time $\tau(x_0)\lt\infty$.</strong> Three trajectories reach their vertices at $\tau\approx1.12$, $1.20$, and $1.22$ and remain there.</figcaption>
+    </figure>
+
+    <h3 id="straighter"><span class="h-num">2.4</span>Autonomous flow has straighter trajectories</h3>
+    <p class="h3-sub q">Why prefer the autonomous flow over the time-dependent one?</p>
+    <p>A time-dependent trajectory curves because its field changes underneath it. It heads toward the mean, then bends as attractors appear and move. The autonomous field's basins are fixed from the start, so each particle heads almost directly to its destination. In the paper's toy comparison on the 2-simplex, the mean ratio of path length to chord length is about <strong>1.09</strong> for the autonomous flow versus <strong>1.58</strong> for the time-dependent flow. Straighter paths are easier to compress into a single jump.</p>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <video src="media/c08_straighter_paths.mp4" poster="media/posters/c08_straighter_paths.jpg" muted loop playsinline preload="none" controls data-player aria-label="Animation comparing autonomous and time-dependent trajectories with a bar chart of path-to-chord ratios."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 9</span><strong>Path length / chord length.</strong> Autonomous trajectories (solid) versus time-dependent trajectories (dashed) from the same starting points. In this animation's sample of 153 prior points, the mean ratios are 1.042 and 1.294.</figcaption>
+    </figure>
+
+    <div class="widget" id="w-paths" data-widget="paths">
+      <div class="widget-frame">
+        <div class="widget-head"><span class="w-title">Drop a point and compare the time-dependent and autonomous flows</span><span class="w-kind">Interactive 2 · computed live</span></div>
+        <div class="widget-body">
+          <div class="controls">
+            <button class="btn primary" type="button" data-role="random">Drop 12 random points</button>
+            <button class="btn" type="button" data-role="clear">Clear</button>
+            <label><input type="checkbox" data-role="basins"> show basins of $T$ (§2.6)</label>
+          </div>
+          <div class="canvas-wrap"><canvas data-role="canvas" width="900" height="700" aria-label="Simplex canvas: click to start a trajectory"></canvas></div>
+          <div class="legend"><span><i class="line" style="border-color:#3a3cb1"></i>autonomous $\dot X=b(X)$</span><span><i class="dash" style="border-color:#50b2d7"></i>time-dependent $\dot X=b_t(X)$</span><span><i style="background:#e4e2fe"></i><i style="background:#ddf1fa"></i><i style="background:#cff5e6"></i>basins of $e_1, e_2, e_3$</span></div>
+          <div class="readouts">
+            <div class="readout">autonomous path / chord<b data-role="ra">—</b></div>
+            <div class="readout">time-dependent path / chord<b data-role="rt">—</b></div>
+            <div class="readout">trajectories<b data-role="n">0</b></div>
+          </div>
+          <p class="hint">Click or tap anywhere on the plane to start a trajectory from that point.</p>
+        </div>
+      </div>
+      <p class="widget-caption">The same toy as Interactive 1. Each start point is integrated under both fields, the autonomous flow until it is absorbed at a vertex, and the time-dependent flow from $t=0$ to $1$. The ratios are averaged over the trajectories on screen. The basin coloring shows where the autonomous flow sends each point, which is the transport map $T$ of Section 2.6.</p>
+    </div>
+
+    <h3 id="equations"><span class="h-num">2.5</span>Eulerian and conservation equations</h3>
+    <p class="h3-sub">The defining equations of the autonomous flow and its transport map</p>
+    <p>Autonomous flows have a semigroup property, meaning that following the flow for time $\varepsilon$ and then for time $s$ is the same as following it for $s+\varepsilon$. Compare two ways of getting there. We can run the flow from $x$ a little longer, $X_{s+\varepsilon}(x)\approx X_s(x)+\varepsilon\,\partial_sX_s(x)$. Or we can first nudge the starting point along the field and then run for time $s$, $X_s(x+\varepsilon b)\approx X_s(x)+\varepsilon\,b\cdot\nabla X_s(x)$. Both land on the same point, which gives an equation for the flow as a function of its <em>starting</em> point.</p>
+    <div class="eq-box"><span class="eq-label">Eulerian equation</span>
+      $$\begin{cases}b(x)\cdot\nabla X_s(x)=\partial_sX_s(x), & x\notin M_1,\\ X_s(x)=x, & x\in M_1.\end{cases}$$
+    </div>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <video src="media/c24_eulerian_equation.mp4" poster="media/posters/c24_eulerian_equation.jpg" muted loop playsinline preload="none" controls data-player data-chapters="2.1:1 · Follow for time s|4.6:2 · Run a little longer|7.6:3 · Nudge the start|11:4 · Same point" aria-label="Step-by-step animation deriving the Eulerian equation."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 10</span><strong>Deriving the Eulerian equation.</strong> Running the flow a little longer from $x$ (step (2)) and nudging the start along $b$ before running (step (3)) reach the same point. Equating the two expansions gives $b\cdot\nabla X_s=\partial_sX_s$. Use the chapter buttons to step through.</figcaption>
+    </figure>
+
+    <p>Now let $s$ approach the hitting time. Once the trajectory is absorbed, it stops moving, so the right-hand side vanishes, with $\partial_sX_s(x)\to0$ as $s\to\tau(x)$. The limit of $X_s$ is the endpoint map $T$, and it satisfies a <em>stationary</em> equation.</p>
+    <div class="eq-box mint"><span class="eq-label">Conservation equation</span>
+      $$\begin{cases}b(x)\cdot\nabla T(x)=0, & x\notin M_1,\\ T(x)=x, & x\in M_1.\end{cases}$$
+    </div>
+    <p>The equation says that $T$ does not change as you move along the flow. Every point on the same path ends at the same vertex, so $T$ is constant along each trajectory. Moving <em>across</em> the flow, at a basin boundary, $T$ can jump. The exact endpoint map is piecewise constant, with discontinuities on basin boundaries.</p>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <video src="media/c25_conservation_equation.mp4" poster="media/posters/c25_conservation_equation.jpg" muted loop playsinline preload="none" controls data-player data-chapters="1.5:1 · Where the flow ends|6.3:2 · Along the flow|9.5:3 · Across the flow|12:4 · At a vertex" aria-label="Step-by-step animation explaining the conservation equation and boundary condition."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 11</span><strong>Reading the conservation equation.</strong> (1) $T(x)$ is where the flow from $x$ ends. (2) Sliding $x$ along the flow never moves the endpoint, so $b\cdot\nabla T=0$. (3) Sliding $x$ <em>across</em> the flow can make the endpoint jump, since $\nabla T\ne0$ but $\nabla T\perp b$. (4) At a vertex nothing moves, so $T(x)=x$ on $M_1$.</figcaption>
+    </figure>
+
+    <h3 id="transport-map"><span class="h-num">2.6</span>The autonomous transport map</h3>
+    <p class="h3-sub q">Can we skip the path and jump straight to its end?</p>
+    <p>The one-step transport map is the long-time limit of the autonomous flow.</p>
+    <div class="eq-box"><span class="eq-label">One-step transport map</span>
+      $$T(x_0):=\lim_{s\to\tau(x_0)}X_s(x_0)\in M_1,\qquad T_\#\mu_0=\mu_1$$
+    </div>
+    <p class="eq-caption">The long-time limit is on the left and the pushforward is on the right, meaning $\mu_0\big(T^{-1}(A)\big)=\mu_1(A)$ for every set $A$.</p>
+    <p>It has three properties that the rest of the method relies on.</p>
+    <ol>
+      <li><strong>Constant along every trajectory.</strong> $T\big(X_s(x_0)\big)=T(x_0)$.</li>
+      <li><strong>Idempotent.</strong> $T\circ T=T$, so $T^{\circ k}=T^{\circ k'}$ for all $k,k'\in\mathbb N$. Once you reach the data, applying $T$ again changes nothing.</li>
+      <li><strong>Its level sets are the basins of the vertices.</strong></li>
+    </ol>
+    <p>The boundary condition is a key component of the definition. Any constant function $T(x)=c$ solves $b\cdot\nabla T=0$, but no constant function fixes all of the vertices. If $\widetilde T$ is constant along the same trajectories and equals the identity on $M_1$, then $\widetilde T(x)=\lim_{s\uparrow\tau(x)}\widetilde T(X_s(x))=T(x)$. The interior equation and the boundary condition <em>together</em> define the endpoint map uniquely along the trajectories that reach the data <a class="cite" href="https://www.alphaxiv.org/pdf/2609.15903" target="_blank" rel="noopener">[1, Prop. 3.2]</a>.</p>
+
+    <figure class="fig square">
+      <div class="fig-frame">
+        <video src="media/c09_transport_map.mp4" poster="media/posters/c09_transport_map.jpg" muted loop playsinline preload="none" controls data-player aria-label="Animation of the transport map: the plane is partitioned into three colored basins and every sample jumps to its vertex."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 12</span><strong>The transport map partitions space into basins.</strong> Every prior sample is sent to the vertex whose basin contains it (lavender $e_1$, sky $e_2$, mint $e_3$). Applying the map again leaves it in place, so $T(T(x_0))=T(x_0)$. Try the basin toggle in Interactive 2 to compute these regions yourself.</figcaption>
+    </figure>
+
+    <!-- ═══════════════════════════ PART 3 ═══════════════════════════ -->
+    <header class="part" id="learning">
+      <span class="part-num">Part 03</span>
+      <h2>Learning one-step maps without distillation</h2>
+      <p>Turn the conservation equation into a regression problem that needs only data samples.</p>
+    </header>
+
+    <h3 id="iterate"><span class="h-num">3.1</span>Iteratively solving the conservation equation</h3>
+    <p class="h3-sub q">How do we train $T$ without a teacher?</p>
+    <p>We use the Eulerian and conservation equations to define a training algorithm whose objective is minimized at the transport map. Initializing $T=\mathrm{id}$ as the identity (which already satisfies the boundary condition) we can iteratively minimize the residual of the conservation equation which pushes the map along the autonomous field until the residual vanishes when $T$ is the transport map.</p>
+    <div class="eq-box"><span class="eq-label">Euler iteration of step size $\eta$</span>
+      $$X^{(n+1)}(x)=X^{(n)}(x)+\eta\,b(x)\cdot\nabla X^{(n)}(x),\qquad X^{(0)}=\mathrm{id},\qquad X^{(n)}\to T$$
+    </div>
+    <p>Each training iteration advances the flow a little further, and the fixed point satisfies $b\cdot\nabla T=0$. One problem remains, which is that we don't have access to the marginal autonomous velocity $b$ (a quantity often estimated with a teacher model). However, since $b(x)$ is the conditional mean of the sampled velocity $\dot I_t$, and the directional derivative is linear in the direction, we can replace $b$ by $\dot I_t$ inside a regression without changing the fixed point.</p>
+    $$\mathbb E_{t,x_0,x_1}\big[\dot I_t\cdot\nabla T_\theta(I_t)\mid I_t=x\big]=b(x)\cdot\nabla T_\theta(x).$$
+    <p>Regressing $T_\theta(I_t)$ onto the detached target $T_\theta(I_t)+\dot I_t\cdot\nabla T_\theta(I_t)$ performs one Euler step in expectation. Adding the boundary condition at clean data gives the optimal map as the solution of the following objective:</p>
+    <div class="eq-box mint"><span class="eq-label">Self-regression target + boundary condition</span>
+      $$T=\arg\min_{T_\theta}\;\mathbb E_{t,x_0,x_1}\Big[\big\|T_\theta(I_t)-\operatorname{sg}\big(T_\theta(I_t)+\dot I_t\cdot\nabla T_\theta(I_t)\big)\big\|^2+\big\|T_\theta(x_1)-x_1\big\|^2\Big]$$
+    </div>
+    <p>The directional derivative is a single Jacobian–vector product, so training does not need the marginal velocity from a pretrained teacher.</p>
+
+    <figure class="fig square">
+      <div class="fig-frame">
+        <video src="media/c10_training_iterations.mp4" poster="media/posters/c10_training_iterations.jpg" muted loop playsinline preload="none" controls data-player aria-label="Animation of Euler iterations moving points from the identity map to the vertices."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 13</span><strong>From identity to transport map.</strong> At $n=0$, the map is the identity and every point stays put. Each iteration pushes $X^{(n)}(x)$ further along the flow. For large $n$, the iterates converge to $T$, which sends every point to its vertex.</figcaption>
+    </figure>
+
+    <h3 id="partial"><span class="h-num">3.2</span>A partially trained map still converges</h3>
+    <p class="h3-sub q">What happens if training the map is not converged?</p>
+    <p>Suppose the trained map does not converge. The iterative training scheme means the map we have learned approximates the autonomous flow truncated at some finite time $T_\theta\approx X_t$, which can yield better and better approximations of the true map $T$ when we apply it repeatedly by the semigroup property.</p>
+    <div class="eq-grid">
+      <div class="eq-box mint"><span class="eq-label">Truncated flow</span>
+        $$T_\theta(x_0)\approx X_t(x_0)$$
+      </div>
+      <div class="eq-box sky"><span class="eq-label">Semigroup</span>
+        $$X_t\circ X_t=X_{2t}$$
+      </div>
+    </div>
+    <div class="eq-box"><span class="eq-label">Iterating the map</span>
+      $$T_\theta^{\circ k}(x_0)\approx X_{kt}(x_0)\;\longrightarrow\;M_1\quad\text{as } kt\to\tau(x_0)$$
+    </div>
+    <p>Reapplying the map $k$ times acts like jumping along the autonomous flow, and the iterates stop changing once $kt$ reaches the hitting time. Generation therefore reduces to <em>iterating one map until it reaches a fixed point</em>.</p>
+
+    <figure class="fig square">
+      <div class="fig-frame">
+        <video src="media/c11_iterate_partial_map.mp4" poster="media/posters/c11_iterate_partial_map.jpg" muted loop playsinline preload="none" controls data-player aria-label="Animation of repeated applications of a partially trained map stepping points toward the vertices."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 14</span><strong>Iterating a partially trained map.</strong> Each application $T_\theta^{\circ k}(x_0)\approx X_{kt}(x_0)$ advances a point along its trajectory. After a few applications, it sits at a vertex and stays there.</figcaption>
+    </figure>
+
+    <h3 id="objectives"><span class="h-num">3.3</span>Training objectives</h3>
+    <p class="h3-sub">How to train the transport map effectively from data</p>
+    <p>For sequences, we parameterize $T_\theta(\cdot)=\operatorname{softmax}(f_\theta(\cdot))$ which outputs a categorical distribution at each position. The sums below run over positions outside a clean context set $\mathcal C$, which is introduced in <a href="#context">Section 4.1</a> and is empty when no clean context exists before the first NFE. We use the following objectives, each of which encodes a constraint satisfied by the transport map.</p>
+    <div class="eq-box"><span class="eq-label">Euler self-regression step</span>
+      $$\mathcal L_{\text{transport}}(\theta):=\mathbb E_{t,x_0,x_1}\Big[\sum_{\ell\in[L]\setminus\mathcal C}\big\|T_\theta(I_t)^\ell-\operatorname{sg}\big(T_\theta(I_t)+\dot I_t\cdot\nabla T_\theta(I_t)\big)^\ell\big\|^2\Big]$$
+    </div>
+    <div class="eq-box mint"><span class="eq-label">Boundary condition at clean data, $T(x)=x$ for $x\in M_1$</span>
+      $$\mathcal L_{\text{bnd}}(\theta):=\mathbb E_{x_1}\Big[\sum_{\ell\in[L]\setminus\mathcal C}\operatorname{CE}\big(T_\theta(x_1)^\ell,\,x_1^\ell\big)\Big]$$
+    </div>
+    <div class="eq-box sky"><span class="eq-label">Semigroup condition</span>
+      $$\mathcal L_{\text{semi}}(\theta):=\mathbb E_{t,x_0,x_1}\Big[\sum_{k\in\mathcal K}\sum_{\ell\in[L]\setminus\mathcal C}\operatorname{CE}\big(T_\theta(I_t)^\ell,\,\operatorname{sg}\big(T_\theta^{\circ k}(I_t)\big)^\ell\big)\Big]$$
+    </div>
+    <div class="eq-box"><span class="eq-label">Full objective</span>
+      $$\mathcal L(\theta)=\mathcal L_{\text{transport}}+\lambda_{\text{semi}}\mathcal L_{\text{semi}}+\lambda_{\text{bnd}}\mathcal L_{\text{bnd}}+\lambda_{\text{anchor}}\mathcal L_{\text{anchor}}$$
+    </div>
+    <p>The Euler-corrected target does not necessarily lie on the simplex, so the transport term uses squared error, while clean categorical targets use cross-entropy. The semigroup term is only effective late in training, because the identity map is already idempotent and satisfies the constraint, so consistency alone does not yield the transport we want. That leaves one more question. From our previous discussion, we notice that the boundary term only supervises <em>perfectly clean</em> inputs whereas <em>all intermediate points</em> along a flow should land on the vertices. While the transport objective enforces consistency over the trajectory, it is a rather indirect objective which preserves the posterior at any point. However, there is a point along each interpolant where the posterior reduces to a Dirac delta at a single vertex, which motivates the question: <strong><em>When and how can we directly enforce that points that have already committed to a vertex land on it?</em></strong></p>
+
+    <h3 id="commitment"><span class="h-num">3.4</span>Commitment time of the flow trajectory</h3>
+    <p class="h3-sub q">When does the time-dependent flow commit to a vertex on the simplex?</p>
+    <p>A naive way to anchor all ambient points to land on a vertex is to minimize the discrepancy between $T(I_t)$ and $x_1$ for all $t\in[0,1]$. However, this constraint only holds when the target is fixed and the posterior at $I_t$ is $\delta(x_1)$, and it does not hold for general times $t$ when each position must resolve its token identity relative to the other tokens in the sequence to form a jointly coherent sequence. Only after a <em>specific time</em> along the interpolant are all the tokens committed to a specific target, and only then can we enforce an additional loss that anchors to the committed target. We call this the <em>commitment time</em> $t^*$, and we derive an expression for it next.</p>
+    <p><strong>A signal-plus-noise problem.</strong> Take one token with a uniform prior over $V$ vertices, fix its true endpoint $e_k$, and write $x=I_t=(1-\alpha_t)e_k+\alpha_tz$ with $z\sim\mathcal N(0,\sigma^2I)$ and $\alpha_t=(1-t)^a$. The posterior logits of the sampled state are</p>
+    <div class="eq-box"><span class="eq-label">Planted logits</span>
+      $$U_j=\rho^2\,\mathbf 1[j=k]+h_j,\qquad h_j\overset{\text{iid}}{\sim}\mathcal N(0,\rho^2),\qquad \rho(t)=\frac{1-\alpha_t}{\alpha_t\,\sigma}.$$
+    </div>
+    <p>Everything about the schedule and the noise scale has collapsed into one signal-to-noise ratio $\rho$. The true token receives a planted signal $\rho^2$, and every token receives Gaussian noise with standard deviation $\rho$. The posterior mass on the target is</p>
+    $$p(k\mid x)=\frac{e^{\rho^2+h_k}}{e^{\rho^2+h_k}+\sum_{j\ne k}e^{h_j}},$$
+    <p>and the competing sum has the form of a partition function in Derrida's <strong>Random Energy Model</strong> <a href="#ref-rem">[7]</a>, with $V-1$ independent random energies. The typical largest competitor is $\max_{j\ne k}h_j\approx\rho\sqrt{2\log V}$. The target wins once its signal beats that maximum.</p>
+    $$\underbrace{\rho^2}_{\text{target signal}}\approx\underbrace{\rho\sqrt{2\log V}}_{\text{largest competitor}}\quad\Longrightarrow\quad\rho^\star\approx\sqrt{2\log V}.$$
+    <p>Because $\rho(t)$ increases monotonically in $t$, we can invert this threshold to get a time.</p>
+    <div class="eq-box mint"><span class="eq-label">Phase transition / commitment time <a class="cite" href="https://www.alphaxiv.org/pdf/2609.15903" target="_blank" rel="noopener">[1, Thm. 4.1]</a></span>
+      $$t^*=1-\Big(1+\sigma\sqrt{2\log V}\Big)^{-1/a}$$
+    </div>
+    <p>Before $t^*$, the token is undecided and must be resolved jointly with the other positions. After $t^*$, the target vertex dominates, and further integration does not change the output. Commitment time depends on the vocabulary size $V$, the prior scale $\sigma$, and the schedule exponent $a$. Larger noise delays it, a faster-decaying schedule moves it earlier, and $V$ enters only through a logarithm.</p>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <video src="media/c12_phase_transition.mp4" poster="media/posters/c12_phase_transition.jpg" muted loop playsinline preload="none" controls data-player aria-label="Animation of a single interpolant crossing the commitment time, with posterior bars snapping to one vertex."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 15</span><strong>Crossing $t^*$.</strong> One interpolant on the 2-simplex ($V=3$, $\sigma=0.55$, $a=1$, so $t^*\approx0.45$). The posterior $p(x_1=e_k\mid I_t)$ moves gradually at first, then snaps to the target once the path enters the anchor region past $t^*$.</figcaption>
+    </figure>
+
+    <div class="widget" id="w-rem" data-widget="rem">
+      <div class="widget-frame">
+        <div class="widget-head"><span class="w-title">Simulate when the target vertex beats $V-1$ competing vertices</span><span class="w-kind">Interactive 3 · simulated live</span></div>
+        <div class="widget-body">
+          <div class="controls">
+            <div class="control"><span class="c-top"><span>interpolation time $t$</span><output data-role="tval">0.60</output></span><input type="range" min="0" max="0.99" step="0.005" value="0.60" data-role="t" aria-label="Interpolation time t"></div>
+            <div class="control"><span class="c-top"><span>noise scale $\sigma$</span><output data-role="sval">1.00</output></span><input type="range" min="0.1" max="3" step="0.05" value="1" data-role="sigma" aria-label="Noise scale sigma"></div>
+            <div class="control"><span class="c-top"><span>schedule exponent $a$</span><output data-role="aval">1.0</output></span><input type="range" min="1" max="3" step="0.1" value="1" data-role="a" aria-label="Schedule exponent a"></div>
+          </div>
+          <div class="controls">
+            <span>vocabulary</span>
+            <span class="seg" role="group" aria-label="Vocabulary size">
+              <button class="btn" type="button" data-v="12" aria-pressed="false">Sudoku · 12</button>
+              <button class="btn" type="button" data-v="30522" aria-pressed="true">LM1B · 30,522</button>
+              <button class="btn" type="button" data-v="50257" aria-pressed="false">OWT · 50,257</button>
+            </span>
+            <button class="btn" type="button" data-role="resample">Resample noise</button>
+          </div>
+          <div class="canvas-wrap"><canvas data-role="hist" width="900" height="300" aria-label="Histogram of competitor logits and the target logit"></canvas></div>
+          <div class="canvas-wrap"><canvas data-role="curve" width="900" height="170" aria-label="Posterior probability of the target versus time"></canvas></div>
+          <div class="readouts">
+            <div class="readout">signal-to-noise $\rho(t)$<b data-role="rho">—</b></div>
+            <div class="readout">competitors above target<b data-role="above">—</b></div>
+            <div class="readout">posterior $p(k\mid x)$<b data-role="post">—</b></div>
+            <div class="readout">commitment time $t^*$<b data-role="tstar">—</b></div>
+          </div>
+        </div>
+      </div>
+      <p class="widget-caption">One draw of $z$ is sampled per vocabulary and reused for every $t$, so moving the slider follows a single interpolant. The histogram shows competitor logits in units of $\rho$. The dashed line marks the predicted maximum $\sqrt{2\log V}$, and the indigo spike marks the target at $\rho+z_k/\sigma$. The lower curve is the exact posterior of the target for this draw, with $t^*$ from the formula marked in mint.</p>
+    </div>
+
+
+    <h3 id="vocab"><span class="h-num">3.5</span>Commitment time across vocabularies</h3>
+    <p class="h3-sub q">How does $t^*$ scale with vocabulary size and schedule?</p>
+    <p>The table below evaluates the commitment time for the vocabularies used in our experiments, with $\sigma=1$ and $a=1$.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th class="num">LM1B</th><th class="num">OpenWebText</th><th class="num">GSM8K</th><th class="num">Sudoku</th></tr></thead>
+        <tbody>
+          <tr><td>Vocabulary $|V|$</td><td class="num">30,522</td><td class="num">50,257</td><td class="num">49,152</td><td class="num">12</td></tr>
+          <tr><td>Noise scale $\sigma$ · exponent $a$</td><td class="num">1 · 1</td><td class="num">1 · 1</td><td class="num">1 · 1</td><td class="num">1 · 1</td></tr>
+          <tr><td>$\sqrt{2\log|V|}$</td><td class="num">4.545</td><td class="num">4.653</td><td class="num">4.648</td><td class="num">2.229</td></tr>
+          <tr class="ours"><td>Commitment time $t^*$</td><td class="num">0.820</td><td class="num">0.823</td><td class="num">0.823</td><td class="num">0.690</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Because $V$ enters only through $\sqrt{2\log V}$, the language vocabularies all commit at nearly the same time, while a 12-token Sudoku vocabulary commits much earlier. The commitment time gives us a principled answer to the question at the end of Section 3.3. Over $[t^*,1]$ the endpoint has already been decided, so we can anchor the map to it directly.</p>
+    <div class="eq-box mint"><span class="eq-label">Anchor loss · enforces $T_\theta(I_t)=x_1$ for $t\gt t^*$</span>
+      $$\mathcal L_{\text{anchor}}(\theta):=\mathbb E_{t,x_0,x_1}\Big[\sum_\ell\mathbf 1[t\gt t_{\text{anchor}}]\,\operatorname{CE}\big(T_\theta(I_t)^\ell,\,x_1^\ell\big)\Big]$$
+    </div>
+    <p>Before commitment, the transport objective shapes how the map changes along the flow and leaves different starting states free to choose different endpoints. After commitment, the anchor supplies a direct target. This also replaces the delicate time reparameterization that flow-map language models need. We still sample $t$ during training, but the network itself never sees it.</p>
+
+    <div class="widget" id="w-tstar" data-widget="tstar">
+      <div class="widget-frame">
+        <div class="widget-head"><span class="w-title">The commitment times for each dataset</span><span class="w-kind">Interactive 4</span></div>
+        <div class="widget-body">
+          <div class="controls">
+            <div class="control"><span class="c-top"><span>noise scale $\sigma$</span><output data-role="sval">1.00</output></span><input type="range" min="0.1" max="3" step="0.05" value="1" data-role="sigma" aria-label="Noise scale sigma"></div>
+            <div class="control"><span class="c-top"><span>custom vocabulary $V$</span><output data-role="vval">1,000</output></span><input type="range" min="0.5" max="5.5" step="0.01" value="3" data-role="logv" aria-label="Custom vocabulary size, log scale"></div>
+          </div>
+          <div class="canvas-wrap"><canvas data-role="plot" width="900" height="420" aria-label="Commitment time versus vocabulary size"></canvas></div>
+          <div class="legend"><span><i class="line" style="border-color:#3a3cb1"></i>$a=1$</span><span><i class="line" style="border-color:#8ad4f0"></i>$a=2$</span><span><i class="line" style="border-color:#7fe5c1"></i>$a=3$</span><span><i style="background:#05009e;border-radius:50%;width:8px;height:8px"></i>datasets</span><span><i style="background:#6b67ee;width:8px;height:8px;transform:rotate(45deg)"></i>your $V$</span></div>
+          <div class="readouts" data-role="readouts"></div>
+        </div>
+      </div>
+      <p class="widget-caption">Computed from $t^*=1-(1+\sigma\sqrt{2\log V})^{-1/a}$. Increasing $\sigma$ pushes every curve later, and a larger exponent $a$ moves commitment earlier. The custom-$V$ marker reads off all three schedules at once.</p>
+    </div>
+
+    <p>We found that changing the anchor time has a real impact empirically. Anchoring too early supervises toward a fixed target while the endpoint is still undecided, and the model collapses onto repetitive tokens while anchoring too late leaves the post-transition interval unsupervised and slows convergence <a href="#ref-dbtm">[1, Table 12]</a>.</p>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <video src="media/c14_anchor_ablation.mp4" poster="media/posters/c14_anchor_ablation.jpg" muted loop playsinline preload="none" controls data-player aria-label="Bar charts of generative perplexity and entropy for four anchor times."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 16</span><strong>Anchor-time ablation on LM1B</strong> (DBTM + ril, 16 NFE, $\kappa=0.9$). Anchoring at $0.60$ yields a deceptively low Gen-PPL of 26.0, but entropy collapses to 3.84. Anchoring at $0.85$ preserves entropy but raises Gen-PPL to 103.5. The default $t_{\text{anchor}}=0.75$ sits between the two failure modes.</figcaption>
+    </figure>
+
+    <!-- ═══════════════════════════ PART 4 ═══════════════════════════ -->
+    <header class="part" id="refinement">
+      <span class="part-num">Part 04</span>
+      <h2>Training and sampling with fixed-point refinement</h2>
+      <p>Because every application proposes a clean sequence, extra NFEs can refine a proposal rather than integrate an ODE.</p>
+    </header>
+
+    <p>In the exact theory, $T\circ T=T$, so one application reaches the data and further applications do nothing. A learned $T_\theta$ is only an approximation, and its first proposal can contain inconsistencies. While flow maps use additional computation to take smaller jumps along the ODE, DBTM generates the fixed endpoint by construction, so additional computation can be interpreted as fixed-point iteration that refines the final output.</p>
+
+    <h3 id="context"><span class="h-num">4.1</span>Clean-context interpolant</h3>
+    <p class="h3-sub">Training the map on partially clean sequences so that NFEs scale as refinement steps</p>
+    <p>Let $\mathcal C$ be a set of positions held at their clean values. We extend the interpolant so that context positions are one-hot tokens and every other position is noised to a single shared time $t$.</p>
+    <div class="eq-box"><span class="eq-label">Clean-context interpolant</span>
+      $$I_t^\ell(\mathcal C):=\begin{cases}x_1^\ell, & \ell\in\mathcal C\quad\text{(one-hot tokens at context positions)},\\ \alpha_tx_0^\ell+(1-\alpha_t)x_1^\ell, & \ell\in[L]\setminus\mathcal C\quad\text{(noised to a shared time } t).\end{cases}$$
+    </div>
+    <p>$T$ stays time-independent, but it is trained on this larger family, with a fixed fraction of samples that have no context at all. At inference, committed tokens become clean context, and the same map completes the rest.</p>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <video src="media/c15_partial_context.mp4" poster="media/posters/c15_partial_context.jpg" muted loop playsinline preload="none" controls data-player aria-label="Animation of random context sets held clean while other positions are noised to a shared time."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 17</span><strong>Training on partial context.</strong> Each draw holds a random context set $\mathcal C$ at $x_1$ (highlighted) and noises all other positions to the same $t$. The map never sees $t$.</figcaption>
+    </figure>
+
+    <h3 id="commit-renoise"><span class="h-num">4.2</span>Commit, renoise, refine</h3>
+    <p class="h3-sub">Each NFE refines a partially clean sequence rather than integrating an ODE</p>
+    <p>The inference-time refinement loops through three steps.</p>
+    <ol>
+      <li><strong>Propose and score.</strong> Apply the map, decode $\hat x^\ell=\arg\max T_\theta(\hat x)^\ell$, and compute a quality score $q^\ell$ for each token. Create the commit set with $q^\ell\ge\kappa$.</li>
+      <li><strong>Commit and renoise.</strong> Hold committed positions at their decoded tokens, $\hat x^\ell\leftarrow\arg\max(T_\theta(\hat x)^\ell)$ for $\ell\in\mathcal C$, and draw fresh noise $\hat x^\ell\sim\mathcal N(0,\sigma^2 I_V)$ everywhere else.</li>
+      <li><strong>Refine.</strong> Apply the map again, $\hat x\leftarrow T_\theta(\hat x)$, until every position is committed.</li>
+    </ol>
+    <p>Each round costs one NFE, and the quality score comes from the same forward pass. Commitment also gives a natural <em>stopping rule</em>: sampling ends when every token passes the threshold, so the number of NFEs adapts to the sample instead of being fixed in advance.</p>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <video src="media/c16_refinement_rounds.mp4" poster="media/posters/c16_refinement_rounds.jpg" muted loop playsinline preload="none" controls data-player data-chapters="0.6:Fresh noise|3.5:Round 1 · 5/12|6.2:Round 2 · 8/12|8.8:Round 3 · 11/12|12:Round 4 · 12/12" aria-label="Animation of four refinement rounds committing tokens of a twelve-word sentence."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 18</span><strong>Four rounds of commit, renoise, refine</strong> (illustrative schedule). Positions with $q^\ell\ge\kappa=0.9$ are committed (shaded). The rest are renoised and proposed again with more context, until all twelve positions are committed.</figcaption>
+    </figure>
+
+    <h3 id="commit-rules"><span class="h-num">4.3</span>Commitment rules</h3>
+    <p class="h3-sub">Confidence- and quality-based commitment without extra NFEs</p>
+    <p>Each refinement round computes a per-token score that determines which positions are reliable enough to commit, and we consider two ways to compute it from the same forward pass with no extra NFEs.</p>
+    <div class="eq-box"><span class="eq-label">Confidence-based score from the softmax probability of the argmax token</span>
+      $$q^\ell\big(T_\theta(x)\big):=\big\langle T_\theta(x)^\ell,\,\hat x_1^\ell\big\rangle,\qquad\hat x_1=\arg\max\big(T_\theta(x)\big)$$
+    </div>
+    <div class="eq-box sky"><span class="eq-label">Quality-based score from the learned probability of being correct given the context</span>
+      $$q^\ell_\phi\big(T_\theta(x)\big)=\Pr\big[\hat x_1^\ell=x_1^\ell\mid T_\theta(x)\big]$$
+    </div>
+    <p>The quality head shares the network trunk and is trained by binary cross-entropy against whether each proposed token is correct.</p>
+    $$\mathcal L_\phi=\mathbb E_{x_0,x_1}\Big[\sum_\ell\operatorname{BCE}\Big(\mathbf 1\big[\hat x_1^\ell=x_1^\ell\big],\,q^\ell_\phi\big(T_\theta(x)\big)\Big)\Big].$$
+    <p>A threshold alone could stall if nothing is confident. Under a budget of $k$ rounds, with $\mathcal R_r$ the unresolved positions entering round $r$, we also ensure a minimum set of highest scoring tokens are committed.</p>
+    <div class="eq-box mint"><span class="eq-label">Threshold ∪ commitment floor</span>
+      $$n_r=\Big\lceil\tfrac{|\mathcal R_r|}{k-r+1}\Big\rceil,\qquad\Delta\mathcal C_r=\{\ell\in\mathcal R_r:q^\ell_r\ge\kappa\}\;\cup\;\operatorname{top}_{n_r}(\mathcal R_r;q_r).$$
+    </div>
+    <p>The threshold keeps confident positions, and the commitment floor guarantees progress. In the last round, $n_k=|\mathcal R_k|$, so every remaining position is committed within $k$ NFEs.</p>
+
+    <div class="widget" id="w-commit" data-widget="commit">
+      <div class="widget-frame">
+        <div class="widget-head"><span class="w-title">Run the commit rule yourself</span><span class="w-kind">Interactive 5</span></div>
+        <div class="widget-body">
+          <div class="controls">
+            <div class="control"><span class="c-top"><span>threshold $\kappa$</span><output data-role="kval">0.90</output></span><input type="range" min="0.5" max="0.99" step="0.01" value="0.9" data-role="kappa" aria-label="Commit threshold kappa"></div>
+            <span>budget $k$</span>
+            <span class="seg" role="group" aria-label="Round budget">
+              <button class="btn" type="button" data-k="2" aria-pressed="false">2</button>
+              <button class="btn" type="button" data-k="3" aria-pressed="false">3</button>
+              <button class="btn" type="button" data-k="4" aria-pressed="true">4</button>
+              <button class="btn" type="button" data-k="6" aria-pressed="false">6</button>
+            </span>
+          </div>
+          <div class="controls">
+            <button class="btn primary" type="button" data-role="step">Apply T<sub>θ</sub> · round 1</button>
+            <button class="btn" type="button" data-role="reset">New noise</button>
+          </div>
+          <div class="commit-board" data-role="board"></div>
+          <p class="status-line" data-role="status"></p>
+          <div class="legend"><span><i style="background:#3a3cb1"></i>committed (clean context)</span><span><i style="background:#7071e0"></i>score $q^\ell_r$ of an uncommitted position</span><span><i style="background:#fff;border:2px solid #3fbf93"></i>committed this round</span><span><i class="dash" style="border-color:#50b2d7"></i>$\kappa$</span></div>
+        </div>
+      </div>
+      <p class="widget-caption">Illustration of the renoise-refine loop. The scores are simulated rather than model outputs, and each round the uncommitted positions draw new scores whose typical value rises with the fraction of context already committed. The commit rule itself is exactly the threshold ∪ commitment floor rule above. Lower $\kappa$ or a smaller budget $k$ to see the commitment floor take effect.</p>
+    </div>
+
+    <h3 id="gap"><span class="h-num">4.4</span>Closing the train–inference gap</h3>
+    <p class="h3-sub">Random training contexts ≠ the structured contexts the sampler builds</p>
+    <p>During standard training, context positions are chosen at random. During sampling, the context is chosen by the model, depends on its confidence, and can contain errors. This results in exposure bias, where the contexts the model builds from its own predictions at inference are out of distribution for the model. Removing time conditioning does not remove this bias. Refinement-in-loop (ril) training therefore constructs the partial-context interpolant from real, stop-gradient sampling rollouts of the current model and trains with the intermediate states of the rollout.</p>
+    <div class="eq-box mint"><span class="eq-label">Rollout with confidence-based sampling, committing ground-truth tokens</span>
+      $$\mathcal L_{\text{ril-c}}(\theta):=\mathbb E_{x_0,x_1}\Big[\sum_{k\in\mathcal K}\sum_{r=1}^k\sum_{\ell\in[L]\setminus\mathcal C_r}\operatorname{CE}\big(T_\theta(\hat x_{r-1,k})^\ell,\,x_1^\ell\big)\Big]$$
+    </div>
+    <div class="eq-box sky"><span class="eq-label">Matching deeper rollouts after a warm-up phase</span>
+      $$\mathcal L_{\text{semi-r}}(\theta):=\mathbb E_{x_0,x_1}\Big[\sum_{k\in\mathcal K}\sum_{r=1}^k\sum_\ell\operatorname{CE}\big(T_\theta(\hat x_{r-1,k})^\ell,\,\operatorname{sg}\big(T_\theta(\hat x_{k-1,k})\big)^\ell\big)\Big]$$
+    </div>
+    <p><strong>The right target depends on the coupling.</strong> In Sudoku, the clues determine the solution, so the rollout target can stay the ground-truth grid. In unconditional language generation, an independently paired noise sample and training sequence do not define a unique correct trajectory. If a rollout is already forming one coherent sentence, forcing it toward an unrelated paired sentence works against the model's own transport assignment. After a warm-up phase, we therefore distill earlier rounds toward the detached output of a <em>deeper</em> rollout that is assumed to be more coherent, which supplies a target that is consistent with the rollout's own noise-to-output coupling. This provides a way to further enhance sequence quality in the few-step regime but requires the map to be trained well on data first.</p>
+
+    <h3 id="ril"><span class="h-num">4.5</span>Training with refinement-in-loop</h3>
+    <p class="h3-sub">Refinement-in-loop training improves convergence on both language modeling and reasoning</p>
+    <p>Turning on refinement-in-loop (ril) training partway through shows its effect directly on both language modeling and reasoning.</p>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <img src="../static/images/onpolicy_gate_lm1b.png" alt="Validation generative perplexity and entropy on LM1B at NFE 1, 2 and 4, before and after enabling refinement-in-loop training at 100K steps." loading="lazy">
+      </div>
+      <div class="fig-frame" style="margin-top:10px">
+        <img src="../static/images/sudoku_solve_acc.png" alt="Validation Sudoku solve accuracy for DBTM and DBTM with refinement-in-loop training on easy, medium and hard puzzles." loading="lazy">
+      </div>
+      <figcaption><span class="fig-num">Figure 19</span><strong>Turning on ril.</strong> At the top, on LM1B, Gen-PPL drops after the ril gate at 100K steps (dashed line) while entropy stays roughly constant. The committed variant (violet) improves more than the non-committed one (blue). At the bottom, on Sudoku, ril dramatically speeds up convergence. Best solve accuracy improves by +0.4, +3.5, and +19.9 points on easy, medium, and hard.</figcaption>
+    </figure>
+
+    <p>Refinement-in-loop improves even the <em>first</em> proposal (1 NFE). Relative to base DBTM, one-step generative perplexity drops by about 58% on LM1B and 65% on OpenWebText.</p>
+
+    <figure class="fig square">
+      <div class="fig-frame">
+        <video src="media/c19_ril_one_nfe.mp4" poster="media/posters/c19_ril_one_nfe.jpg" muted loop playsinline preload="none" controls data-player aria-label="Bar chart of one-NFE generative perplexity for DBTM and DBTM with ril on LM1B and OWT."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 20</span><strong>1-NFE Gen-PPL ↓.</strong> On LM1B it falls from 201.2 to 85.5 (−58%), and on OWT from 188.2 to 65.2 (−65%). Entropies are 4.03 → 3.92 and 4.97 → 4.95 (Table 1).</figcaption>
+    </figure>
+
+    <!-- ═══════════════════════════ PART 5 ═══════════════════════════ -->
+    <header class="part" id="experiments">
+      <span class="part-num">Part 05</span>
+      <h2>Experiments in language modeling and reasoning</h2>
+      <p>Toy dynamics, unconditional generation on LM1B and OpenWebText, and conditional reasoning on Sudoku and GSM8K.</p>
+    </header>
+
+    <h3 id="dynamics"><span class="h-num">5.1</span>Dynamics of the time-dependent flow on the simplex</h3>
+    <p class="h3-sub">The attractors of the time-dependent flow appear at late times</p>
+    <p>We first conduct toy experiments to characterize the dynamics of the time-dependent flow on the simplex. On a 3-simplex with a near-tie between the two most likely tokens, $p=(0.40,0.38,0.20,0.02)$, only <em>one</em> attractor exists from $t=0$ to $t=0.5$, at the dominant vertex. The others appear one at a time after $t=0.5$, at $0.535$, $0.607$, and $0.687$. Even a vertex with 95% of the leader's probability does not appear until $t=0.535$. This is why time-dependent trajectories first head toward the dominant vertex and then bend, and why we prefer the autonomous field, where all attractors exist at the vertices with defined probability basins from the start.</p>
+
+    <p><strong><em>When do the other attractors form?</em></strong> Early on, $x_t$ is mostly noise, so the flow falls back on the prior. A single attractor starts at the mean $p$ and drifts toward the most likely vertex $e_l$. As $t$ grows, $\beta(t)=t/\big(\sigma^2(1-t)^2\big)$ acts as a rising inverse temperature. Writing $x_j$ for the $j$-th coordinate of a fixed point $x$ of the frozen field (its weight on vertex $e_j$), dividing the fixed-point equations for coordinates $l$ and $j$ cancels the softmax normalization,</p>
+    $$\frac{x_l}{x_j}=\frac{p_l}{p_j}e^{\beta(t)\,(x_l-x_j)},$$
+    <p>where the prior favors $e_l$ and the exponential favors whichever coordinate is already larger, and that pull strengthens as $\beta$ grows. The attractor near $e_j$ appears when this equation first gains a stable solution, which happens approximately when</p>
+    $$\beta-\log\beta\;\simeq\;1+\log\frac{p_l}{p_j}+\log(1+m),\qquad\text{i.e.}\qquad\frac{t_j}{(1-t_j)^2}\simeq-\sigma^2\,W_{-1}\!\left(-\frac{p_j}{p_l\,(1+m)\,e}\right),$$
+    <p>where $W_{-1}$ is the lower branch of the Lambert $W$ function and $m$ counts the probabilities comparable to but less than $p_l$ <a class="cite" href="https://www.alphaxiv.org/pdf/2609.15903" target="_blank" rel="noopener">[1, Props. C.2–C.4, Cor. C.1]</a>. Attractors therefore form in order of probability: if $p_j\gt p_k$, then $t_j\lt t_k$. For a standard Gaussian prior ($\sigma=1$), no attractor other than the dominant one forms before $t=0.5$. For the example below ($m=1$), the formula gives $0.553$, $0.598$, and $0.679$, against the exact times $0.535$, $0.607$, and $0.687$.</p>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <video src="media/c29_near_tie_attractors.mp4" poster="media/posters/c29_near_tie_attractors.jpg" muted loop playsinline preload="none" controls data-player aria-label="Animation: as t increases, attractors of the frozen time-dependent field on a 3-simplex appear one at a time, with a timeline marking when each appears."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 21</span><strong>Even a near-tie appears late.</strong> The frozen time-dependent field on $\Delta^3$ with $p=(0.40,0.38,0.20,0.02)$ and $\sigma^2=1$, computed as $t$ sweeps from 0.3 to 0.8. Dots are uniform samples of the simplex colored by the attractor they converge to, and large markers are the attractors. Only the dominant attractor exists before $t=0.5$, and the others appear one at a time, at $t_2=0.535$, $t_3=0.607$, and $t_4=0.687$, even though $p_2/p_1=0.95$.</figcaption>
+    </figure>
+
+    <h3 id="language"><span class="h-num">5.2</span>Unconditional language modeling at few NFEs</h3>
+    <p class="h3-sub">DBTM reaches the coherence–diversity Pareto frontier with a few refinements</p>
+    <p>We train on LM1B and OpenWebText (OWT) and report generative perplexity (Gen-PPL) under GPT-2 Large <a href="#ref-gpt2">[9]</a> together with unigram entropy. Baselines include distilled discrete diffusion and continuous flow maps evaluated at matched NFE budgets. Both DBTM variants train for 200K steps, while FMLM is distilled for 100K steps from a 1M-step teacher. </p>
+
+    <div class="widget" id="w-lang" data-widget="language">
+      <div class="widget-frame">
+        <div class="widget-head"><span class="w-title">Explore Table 1</span><span class="w-kind">Interactive 6</span></div>
+        <div class="widget-body">
+          <div class="controls">
+            <span class="seg" role="group" aria-label="Dataset">
+              <button class="btn" type="button" data-ds="lm1b" aria-pressed="true">LM1B</button>
+              <button class="btn" type="button" data-ds="owt" aria-pressed="false">OpenWebText</button>
+            </span>
+            <span class="seg" role="group" aria-label="Number of function evaluations">
+              <button class="btn" type="button" data-nfe="0" aria-pressed="true">1 NFE</button>
+              <button class="btn" type="button" data-nfe="1" aria-pressed="false">2 NFE</button>
+              <button class="btn" type="button" data-nfe="2" aria-pressed="false">4 NFE</button>
+            </span>
+          </div>
+          <div class="bars" data-role="bars"></div>
+          <div class="legend"><span><i style="background:#3a3cb1"></i>DBTM (ours)</span><span><i style="background:#8ad4f0"></i>continuous flow maps</span><span><i style="background:#c9c7ee"></i>discrete diffusion / other</span><span><i style="background:repeating-linear-gradient(135deg,#efdbff 0 3px,#e4e2fe 3px 6px)"></i>collapsed (entropy far below the data)</span></div>
+          <p class="hint">Bars show Gen-PPL on a log scale (shorter is better), and the gray number is entropy. A low perplexity only counts if entropy stays near the data's.</p>
+        </div>
+      </div>
+      <p class="widget-caption">All values from Table 1 of the paper <a href="#ref-dbtm">[1]</a>. Note that for DFM (ESD) on OWT at 1 NFE, the Gen-PPL of 5.33 comes with an entropy of 0.26, which means repeated tokens. That is why we compare perplexities only at entropies near the data and report full frontiers below.</p>
+    </div>
+
+    <p>A single perplexity number can be misleading, because a model that repeats tokens scores deceptively well. We therefore compare full <em>Pareto frontiers</em> over every inference-time knob (commit temperature, prior scale $\sigma$, and threshold $\kappa$ for DBTM, and churn and prior scale for FMLM) <a href="#ref-frontiers">[10]</a>.</p>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <img src="../static/images/frontier_vs_fmlm_lm1b_ril.png" alt="LM1B generative perplexity versus sample entropy frontiers for FMLM, DBTM and DBTM with ril at 1, 2, 4, 8 and 16 NFE." loading="lazy">
+      </div>
+      <figcaption><span class="fig-num">Figure 22</span><strong>Generative frontiers on LM1B</strong> for NFE ∈ {1, 2, 4, 8, 16}. Lower Gen-PPL and higher entropy are better, and the dotted line marks the data entropy (4.336). DBTM and DBTM + ril dominate FMLM across entropies within the range of the data.</figcaption>
+    </figure>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <img src="assets/frontier_owt.png" alt="OpenWebText generative perplexity versus sample entropy frontiers for FMLM, FMLM+, DBTM and DBTM with ril at 1, 2, 4, 8 and 16 NFE." loading="lazy">
+      </div>
+      <figcaption><span class="fig-num">Figure 23</span><strong>Generative frontiers on OpenWebText</strong> for NFE ∈ {1, 2, 4, 8, 16}, comparing FMLM, FMLM+, DBTM, and DBTM + ril. Lower Gen-PPL and higher entropy are better, and the dotted line marks the entropy of real OWT text. Each curve pools every inference-time knob for that method.</figcaption>
+    </figure>
+
+    <h3 id="reasoning"><span class="h-num">5.3</span>Reasoning with DBTM</h3>
+    <p class="h3-sub">DBTM outperforms discrete and continuous methods on Sudoku and GSM8K in only a few NFEs</p>
+    <p><strong>Sudoku.</strong> We measure one-shot exact-solve accuracy on 2,000 held-out puzzles at three difficulty levels. On the hard split, DBTM + ril solves <strong>84.6%</strong> of puzzles at 4 NFE, 13.4 points above FMLM+ (71.2%). At 16 NFE it reaches <strong>97.5%</strong>, compared with 81.4% for FMLM+. The best many-step baseline, Duo, reaches 58.4% using 128 NFE.</p>
+
+    <p>The trace below is a real 4-NFE sample from the paper. This illustrates the refinement loop: the first proposal is already mostly right, and each round commits the confident cells and fixes the rest against the growing context.</p>
+
+    <figure class="fig">
+      <div class="fig-frame">
+        <video src="media/c27_sudoku_rounds.mp4" poster="media/posters/c27_sudoku_rounds.jpg" muted loop playsinline preload="none" controls data-player data-chapters="1.7:R1 · propose|3.0:R1 · commit 30|5.0:R2 · propose|6.3:R2 · commit 47|8.3:R3 · propose|9.6:R3 · commit 64|13:R4 · solved" aria-label="Real four-round refinement trace on a hard Sudoku puzzle."></video>
+      </div>
+      <figcaption><span class="fig-num">Figure 24</span><strong>A real Sudoku-Hard trace at 4 NFE.</strong> Mint cells are correct and high-confidence, so they are committed. Sky cells are correct but low-confidence, so they are renoised. Lavender cells are incorrect, so they are renoised. The number of committed cells grows from 0 to 30, 47, 64, and 81. Correctness coloring uses the known solution for explanation only, and the sampler never sees it.</figcaption>
+    </figure>
+
+    <p><strong>GSM8K.</strong> We additionally benchmark on the harder math reasoning task GSM8K. Trained on TinyGSM code <a href="#ref-tinygsm">[11]</a> and evaluated zero-shot on the 1,319-problem GSM8K test set, DBTM + ril reaches 16.8% at 32 NFE, compared with 16.6% for FMLM+. This is competitive or superior to other continuous and discrete diffusion baselines with only 32 NFEs (versus 1,024 used by the discrete and continuous diffusion baselines). However, autoregressive models remain dominant, at 53.9% (sampled) and 63.3% (greedy) with 512 NFE.</p>
+
+    <figure class="fig">
+        <div class="fig-frame">
+          <video src="media/c28_gsm8k_rounds.mp4" poster="media/posters/c28_gsm8k_rounds.jpg" muted loop playsinline preload="none" controls data-player data-chapters="2:Round 1|6:Round 10|10:Round 20" aria-label="Real refinement trace on a TinyGSM problem across rounds 1, 10 and 20."></video>
+        </div>
+        <figcaption><span class="fig-num">Figure 25</span><strong>A real TinyGSM trace</strong> (paper appendix). Rounds 1, 10, and 20 of 31. Every intermediate iterate is a complete program, so the trace can be read as it refines.</figcaption>
+      </figure>
+
+    <div class="widget" id="w-reason" data-widget="reasoning">
+      <div class="widget-frame">
+        <div class="widget-head"><span class="w-title">Explore Table 2</span><span class="w-kind">Interactive 7</span></div>
+        <div class="widget-body">
+          <div class="controls">
+            <span class="seg" role="group" aria-label="Benchmark">
+              <button class="btn" type="button" data-task="easy" aria-pressed="false">Sudoku · Easy</button>
+              <button class="btn" type="button" data-task="med" aria-pressed="false">Medium</button>
+              <button class="btn" type="button" data-task="hard" aria-pressed="true">Hard</button>
+              <button class="btn" type="button" data-task="gsm" aria-pressed="false">GSM8K</button>
+            </span>
+            <label><input type="checkbox" data-role="sort"> sort by accuracy</label>
+          </div>
+          <div class="bars" data-role="bars"></div>
+          <div class="legend"><span><i style="background:#3a3cb1"></i>DBTM + ril</span><span><i style="background:#8ad4f0"></i>FMLM+ (few-step flow map)</span><span><i style="background:#c9c7ee"></i>many-step baselines</span></div>
+        </div>
+      </div>
+      <p class="widget-caption">Sudoku bars show exact-solve accuracy (%) on 2,000 held-out puzzles, and GSM8K bars show accuracy (%) on the 1,319-problem test set. The NFE used by each method is printed inside its bar. FMLM+ hard and GSM8K numbers are from Agarwal et al. <a href="#ref-fmlmplus">[4]</a>, and FMLM+ easy and medium at 16 NFE are our own evaluation of the released checkpoints.</p>
+    </div>
+
+    <h3 id="comparison"><span class="h-num">5.4</span>Comparison to flow maps for language modeling</h3>
+    <p class="h3-sub">Flow map language models and DBTM both achieve few-step generation with key differences</p>
+    <p>Flow map language models [<a href="#ref-fmlm">3</a>, <a href="#ref-dfm">12</a>], and DBTM share the same goal of few-step generation, but they differ in several key components, which we summarize below.</p>
+    <div class="table-wrap">
+      <table class="compare">
+        <thead><tr><th></th><th>Flow map LMs / DFM</th><th>DBTM (ours)</th></tr></thead>
+        <tbody>
+          <tr><td>Few-step generation</td><td><span class="yes">Yes</span></td><td><span class="yes">Yes</span></td></tr>
+          <tr><td>Learned object</td><td>Two-time map $X_{s,t}$</td><td>Stationary endpoint map $T$</td></tr>
+          <tr><td>Time conditioning</td><td><span class="no">Yes</span> ($s$ and $t$)</td><td><span class="yes">No</span></td></tr>
+          <tr><td>Teacher model</td><td><span class="no">Yes</span></td><td><span class="yes">No</span></td></tr>
+          <tr><td>Each NFE is…</td><td>A discretized step along the ODE</td><td>A refinement of a clean proposal</td></tr>
+          <tr><td>Self-stopping</td><td><span class="no">No</span>, the step schedule is fixed in advance</td><td><span class="yes">Yes</span>, it stops at the fixed point or when all tokens pass $\kappa$</td></tr>
+          <tr><td>Training complexity</td><td>High, with diagonal/off-diagonal balancing over all $(s,t)$</td><td>Low, with one model conditioned only on the current state</td></tr>
+          <tr><td>Train–inference mismatch</td><td>Yes, many $(s,t)$ jumps are unused at inference</td><td>Low, since interpolants cover inference states and ril training adds rollouts</td></tr>
+          <tr><td>Reasoning trace</td><td>No</td><td>Yes, every iterate is a clean sequence</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ═══════════════════════════ PART 6 ═══════════════════════════ -->
+    <header class="part" id="conclusions">
+      <span class="part-num">Part 06</span>
+      <h2>Conclusions</h2>
+    </header>
+    <ol class="takeaways">
+      <li><strong>An autonomous flow on the simplex</strong> gives straighter, time-averaged paths whose only stable equilibria are the vertices.</li>
+      <li><strong>The transport map solves a conservation equation</strong>, so it can be trained end-to-end from data, with no teacher and no time conditioning.</li>
+      <li><strong>Every application proposes a clean sequence</strong>, so extra NFEs become <em>renoise-and-refine</em> steps that self-correct against committed context.</li>
+      <li><strong>Across language and reasoning</strong>, DBTM improves on discrete diffusion and flow baselines at 1–16 NFE.</li>
+    </ol>
+    <p>We’re excited to see the future extensions of this framework across modalities! For more details, read the <a href="https://arxiv.org/abs/2609.15903" target="_blank" rel="noopener">DBTM paper</a> as well as the <a href="https://arxiv.org/abs/2608.01692" target="_blank" rel="noopener">BTM paper</a>.</p>
+
+    <section class="references" id="references">
+      <h3>References</h3>
+      <ol class="ref-list">
+        <li id="ref-dbtm" class="ref-ours">Tang, Wang. <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2609.15903">Discrete Beckmann Transport Models for One-Step Language Modeling and Reasoning</a>. arXiv 2026.</li>
+        <li id="ref-btm">Lee et al. <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2608.01692">Beckmann Transport Models: From Autonomous Flows to One-Step Maps</a>. NeurIPS 2026.</li>
+        <li id="ref-fmlm">Lee et al. <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2602.16813">Flow Map Language Models: One-step Language Modeling via Continuous Denoising</a>. NeurIPS 2026.</li>
+        <li id="ref-fmlmplus">Agarwal et al. <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2606.24773">Posterior Refinement: Fast Language Generation via Any-Order Flow Maps</a>. arXiv 2026.</li>
+        <li id="ref-si">Albergo et al. <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2303.08797">Stochastic Interpolants: A Unifying Framework for Flows and Diffusions</a>. JMLR 2025.</li>
+        <li id="ref-beckmann">Beckmann. <a target="_blank" rel="noopener" href="https://doi.org/10.2307/1907855">A Continuous Model of Transportation</a>. Econometrica 1952.</li>
+        <li id="ref-rem">Derrida. <a target="_blank" rel="noopener" href="https://doi.org/10.1103/PhysRevLett.45.79">Random-Energy Model: Limit of a Family of Disordered Models</a>. Phys. Rev. Lett. 1980.</li>
+        <li id="ref-boffi">Boffi et al. <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2505.18825">How to Build a Consistency Model: Learning Flow Maps via Self-Distillation</a>. NeurIPS 2025.</li>
+        <li id="ref-gpt2">Radford et al. <a target="_blank" rel="noopener" href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf">Language Models are Unsupervised Multitask Learners</a> (GPT-2). OpenAI 2019.</li>
+        <li id="ref-frontiers">Pynadath, Shi, Zhang. <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2604.02718">Generative Frontiers: Why Evaluation Matters for Diffusion Language Models</a>. arXiv 2026.</li>
+        <li id="ref-tinygsm">Liu et al. <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2312.09241">TinyGSM: Achieving &gt;80% on GSM8K with Small Language Models</a>. arXiv 2023.</li>
+        <li id="ref-dfm">Potaptchik et al. <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2604.09784">Discrete Flow Maps</a>. arXiv 2026.</li>
+      </ol>
+      <h3 id="bibtex">BibTeX</h3>
+<pre class="bibtex">@article{tang2026discrete,
+  title={Discrete Beckmann Transport Models for One-Step Language Modeling and Reasoning},
+  author={Sophia Tang and Shiyi Wang},
+  journal={arXiv preprint arXiv:2609.15903},
+  year={2026},
+  url={https://arxiv.org/abs/2609.15903}
+}
+
+@inproceedings{cheukkit2026beckmann,
+  title={Beckmann Transport Models: From Autonomous Flows to One-Step Maps},
+  author={Lee Cheuk-Kit and Florentin Coeurdoux and Yuyuan Chen and Sophia Tang and Peter Potaptchik and Yilun Du and Michael S. Albergo and Eric Vanden-Eijnden},
+  booktitle={Advances in Neural Information Processing Systems},
+  year={2026},
+  url={https://arxiv.org/abs/2608.01692}
+}</pre>
+    </section>
+  </article>
+</div>
+
+<footer class="site-footer">
+  <div class="inner">
+    <a href="../">&larr; Discrete Beckmann Transport Models</a>
+    <a href="#top">Back to top &uarr;</a>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Enlarged figure">
+  <div class="lightbox-inner">
+    <button class="btn icon-btn lightbox-close" type="button" data-role="close" aria-label="Close">✕</button>
+    <div data-role="media"></div>
+    <p class="lightbox-cap" data-role="cap"></p>
+  </div>
+</div>
+</body>
+</html>
