@@ -48,8 +48,8 @@
     <p class="eyebrow">Technical blog</p>
     <h1>How to Train a One-Step Language Model Without a Teacher</h1>
     <p class="deck">One- and few-step generative models for text usually get their speed by distilling a well-trained teacher model. For flow and diffusion language models, this requires a costly two-stage training pipeline. In our work, we show that one can train the endpoint map of a time-independent flow directly from data without a teacher, obtain clean sequences in one step, and refine the output with each additional NFE.</p>
-    <p class="blog-meta">Based on <a href="https://arxiv.org/abs/2609.15903"><em>Discrete Beckmann Transport Models for One-Step Language Modeling and Reasoning</em></a> by<br>Sophia Tang and Shiyi Wang.</p>
-    <p class="read-more"><a href="https://arxiv.org/abs/2609.15903">arXiv</a><a href="https://www.alphaxiv.org/pdf/2609.15903">alphaXiv</a><a href="#bibtex">BibTeX</a></p>
+    <p class="blog-meta">Based on <a href="https://arxiv.org/abs/2609.15903" target="_blank" rel="noopener"><em>Discrete Beckmann Transport Models for One-Step Language Modeling and Reasoning</em></a> by<br>Sophia Tang and Shiyi Wang.</p>
+    <p class="read-more"><a href="https://arxiv.org/abs/2609.15903" target="_blank" rel="noopener">arXiv</a><a href="https://www.alphaxiv.org/pdf/2609.15903" target="_blank" rel="noopener">alphaXiv</a><a href="#bibtex">BibTeX</a></p>
   </div>
 </section>
 
@@ -57,7 +57,7 @@
   <div class="author-grid">
     <div>
       <p class="label">Authors</p>
-      <p><a href="http://sophtang.github.io/">Sophia Tang</a></p>
+      <p><a href="http://sophtang.github.io/" target="_blank" rel="noopener">Sophia Tang</a></p>
     </div>
     <div>
       <p class="label">Affiliations</p>
@@ -230,7 +230,7 @@
     <div class="eq-box"><span class="eq-label">Two-time flow map</span>
       $$X_{s,t}(x_s)=x_t=x_s+(t-s)\,v_{s,t}(x_s),\qquad\forall\,s,t\in[0,1]$$
     </div>
-    <p>On the diagonal, $v_{s,s}=b_s$, so the instantaneous velocity can be trained with the usual flow-matching loss. Off the diagonal, there is no direct regression target. The model must learn how local predictions <em>compose</em>, which requires consistency objectives such as the semigroup identity $X_{t,u}\circ X_{s,t}=X_{s,u}$. Discrete targets add one more difficulty, because the posterior over token identity changes abruptly within a narrow window of $t$, which motivates the time reparameterization used by <a href="https://one-step-lm.github.io/blog/">flow map language models</a> <a href="#ref-fmlm">[3]</a>.</p>
+    <p>On the diagonal, $v_{s,s}=b_s$, so the instantaneous velocity can be trained with the usual flow-matching loss. Off the diagonal, there is no direct regression target. The model must learn how local predictions <em>compose</em>, which requires consistency objectives such as the semigroup identity $X_{t,u}\circ X_{s,t}=X_{s,u}$. Discrete targets add one more difficulty, because the posterior over token identity changes abruptly within a narrow window of $t$, which motivates the time reparameterization used by <a href="https://one-step-lm.github.io/blog/" target="_blank" rel="noopener">flow map language models</a> <a href="#ref-fmlm">[3]</a>.</p>
 
     <h3 id="bottleneck"><span class="h-num">1.6</span>The distillation bottleneck</h3>
     <p class="h3-sub">Few-step flow maps depend on a pretrained teacher and time conditioning</p>
